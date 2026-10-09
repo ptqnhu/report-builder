@@ -3,6 +3,7 @@ import { DEFAULT_TPL, DEFAULT_EXPORT, effectiveColumns, keyBy, applyFilters, pre
 import { api } from "./api.js";
 import { STEPS } from "./steps/steps.js";
 import StepRail from "./components/StepRail.jsx";
+import Orbs from "./components/Orbs.jsx";
 import ConnectStep from "./steps/ConnectStep.jsx";
 import QueryStep from "./steps/QueryStep.jsx";
 import ColumnsStep from "./steps/ColumnsStep.jsx";
@@ -133,6 +134,7 @@ export default function App() {
 
   return (
     <div className="rb">
+      <Orbs />
       <div className="rb-shell">
         <StepRail step={step} reached={reached} onGo={go} sql={sql} connection={connection} />
 

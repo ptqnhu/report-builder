@@ -1,9 +1,10 @@
 import { STEPS } from "../steps/steps.js";
+import Logo from "./Logo.jsx";
 
 export default function StepRail({ step, reached, onGo, sql, connection }) {
   return (
     <aside className="rb-rail">
-      <p className="rb-brand"><a href="#" title="Back to the home page"><span className="lp-mark" aria-hidden="true">R</span>Report builder</a></p>
+      <p className="rb-brand"><a href="#" title="Back to the home page"><Logo size={26} />Report builder</a></p>
       <p className="rb-brand-sub">From SQL query to SSRS report</p>
       <ol className="steps">
         {STEPS.map((s, i) => (
