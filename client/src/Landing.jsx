@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api.js";
+import "./landing.css";
 
 const STAGES = [
   { n: "1", title: "Connect and query", text: "Pick a SQL Server, choose a database and paste a SELECT statement. SQL Server tells the app exactly which columns and types come back." },
@@ -16,14 +17,20 @@ const FEATURES = [
   { title: "Filters and sort carried over", text: "The filters and sort order you set in the preview are written into the .rdl file, so the report opens the same way." },
 ];
 
-const SAMPLE = [
-  ["Northwind Traders", "Seattle", 42, 18_420.5, true],
-  ["Contoso Ltd", "Chicago", 37, 15_975.0, true],
-  ["Fabrikam Inc", "Denver", 29, 12_310.25, false],
-  ["Adventure Works", "Portland", 24, 9_880.75, true],
-  ["Tailspin Toys", "Austin", 18, 7_402.0, true],
+/** Facts about the app, shown as the stats row under the intro. */
+const STATS = [
+  ["7", "Guided steps"],
+  ["200", "Live preview rows"],
+  ["0", "Passwords stored"],
 ];
-const money = (n) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+const SAMPLE = [
+  ["Northwind Traders", 42, 18_420.5],
+  ["Contoso Ltd", 37, 15_975.0],
+  ["Fabrikam Inc", 29, 12_310.25],
+  ["Adventure Works", 24, 9_880.75],
+];
+const money = (n) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 /** Front page: what the app does, and the way into the builder. */
 export default function Landing({ onStart }) {
@@ -32,104 +39,120 @@ export default function Landing({ onStart }) {
     api.localServers().then((list) => setLocal(list.find((i) => i.running) || null)).catch(() => {});
   }, []);
 
-  const start = (
-    <button className="btn btn-primary lp-cta" onClick={onStart}>Start building a report</button>
-  );
-
   return (
-    <div className="lp">
-      <header className="lp-top">
-        <p className="lp-brand">Report builder</p>
-        <button className="btn btn-sm" onClick={onStart}>Open the builder</button>
-      </header>
+    <div className="lp-page">
+      <div className="lp-band">
+        <header className="lp lp-top">
+          <p className="lp-brand"><span className="lp-mark" aria-hidden="true">R</span>Report builder</p>
+          <nav className="lp-links" aria-label="Page sections">
+            <a href="#how">How it works</a>
+            <a href="#features">Features</a>
+          </nav>
+          <button className="btn lp-pill" onClick={onStart}>Open the builder</button>
+        </header>
 
-      <section className="lp-hero">
-        <div className="lp-hero-copy">
-          <p className="lp-kicker">For SQL Server and SSRS</p>
-          <h1>Turn a SQL query into an SSRS report in minutes</h1>
-          <p className="lp-lead">
-            Write a SELECT statement, shape the result on real data, and download a ready-to-upload .rdl file.
-            No Report Builder, no Visual Studio, no hand-editing XML.
-          </p>
-          <div className="row" style={{ marginTop: 24 }}>
-            {start}
-            <a className="btn btn-quiet" href="#how">See how it works</a>
-          </div>
-          {local && (
-            <p className="lp-local">
-              <span className="conn-dot" aria-hidden="true" />
-              SQL Server found on this computer at <strong>{local.server}</strong>. You can connect without a login.
+        <section className="lp lp-hero">
+          <div className="lp-hero-copy">
+            <h1>
+              Turn any SQL query into an
+              <span className="lp-word">SSRS report</span>
+            </h1>
+            <p className="lp-lead">
+              Write a <strong>SELECT statement</strong>, shape the result on <strong>real data</strong>, and download a
+              ready-to-upload <strong>.rdl file</strong>. No Report Builder, no Visual Studio, no hand-editing XML.
             </p>
-          )}
-        </div>
 
-        <figure className="lp-shot" aria-label="Example report">
-          <div className="doc doc-ledger">
-            <div className="doc-head">
-              <p className="doc-org">Sales team</p>
-              <p className="doc-title">Revenue by customer</p>
-              <div className="doc-meta"><span>5 rows</span><span>Sorted by revenue, highest first</span></div>
-              <ul className="chips"><li>Year is 2026</li></ul>
+            <dl className="lp-stats">
+              {STATS.map(([n, label]) => (
+                <div key={label}><dt>{n}</dt><dd>{label}</dd></div>
+              ))}
+            </dl>
+
+            <div className="lp-actions">
+              <button className="btn btn-primary lp-cta" onClick={onStart}>Start building a report</button>
+              <a className="btn lp-cta lp-ghost" href="#how">See how it works</a>
             </div>
-            <div className="rt-wrap rt-fit">
-              <table className="rt rt-ledger rt-normal rt-zebra">
-                <thead>
-                  <tr><th>Customer</th><th>City</th><th style={{ textAlign: "right" }}>Orders</th><th style={{ textAlign: "right" }}>Revenue</th><th>Paid</th></tr>
-                </thead>
+
+            {local && (
+              <p className="lp-local">
+                <span className="conn-dot" aria-hidden="true" />
+                <span>SQL Server found on this computer at <strong>{local.server}</strong>. You can connect without a login.</span>
+              </p>
+            )}
+          </div>
+
+          <div className="lp-device" aria-label="Example of the report builder">
+            <div className="lp-screen">
+              <div className="lp-screen-top">
+                <span className="lp-mark sm" aria-hidden="true">R</span>
+                <span>Step 7 of 7</span>
+              </div>
+              <p className="lp-screen-hi">Revenue by customer</p>
+              <p className="lp-screen-sub">AdventureWorks · sorted by revenue</p>
+
+              <div className="lp-screen-total">
+                <span>Total revenue</span>
+                <strong>{money(SAMPLE.reduce((s, r) => s + r[2], 0))}</strong>
+              </div>
+
+              <table className="lp-mini">
+                <thead><tr><th>Customer</th><th>Orders</th><th>Revenue</th></tr></thead>
                 <tbody>
-                  {SAMPLE.map(([c, city, orders, rev, paid]) => (
-                    <tr key={c}>
-                      <td>{c}</td><td>{city}</td><td style={{ textAlign: "right" }}>{orders}</td>
-                      <td style={{ textAlign: "right" }}>{money(rev)}</td><td>{paid ? "Yes" : "No"}</td>
-                    </tr>
+                  {SAMPLE.map(([c, orders, rev]) => (
+                    <tr key={c}><td>{c}</td><td>{orders}</td><td>{money(rev)}</td></tr>
                   ))}
                 </tbody>
-                <tfoot>
-                  <tr>
-                    <td>Total</td><td /><td style={{ textAlign: "right" }}>{SAMPLE.reduce((s, r) => s + r[2], 0)}</td>
-                    <td style={{ textAlign: "right" }}>{money(SAMPLE.reduce((s, r) => s + r[3], 0))}</td><td />
-                  </tr>
-                </tfoot>
               </table>
+
+              <div className="lp-action-card">
+                <p className="lp-action-kicker">Ready to export</p>
+                <p className="lp-action-title">Report file built</p>
+                <p className="lp-action-big">.rdl</p>
+                <div className="lp-action-pills">
+                  <span>Download</span><span>View XML</span><span>Upload</span>
+                </div>
+              </div>
             </div>
           </div>
-        </figure>
-      </section>
+        </section>
+      </div>
 
-      <section id="how" className="lp-section">
-        <h2>How it works</h2>
-        <ol className="lp-stages">
-          {STAGES.map((s) => (
-            <li key={s.n} className="panel">
-              <span className="step-dot lp-dot">{s.n}</span>
-              <h3>{s.title}</h3>
-              <p>{s.text}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
+      <div className="lp">
+        <section id="how" className="lp-section">
+          <h2>How it works</h2>
+          <ol className="lp-stages">
+            {STAGES.map((s) => (
+              <li key={s.n} className="panel">
+                <span className="step-dot lp-dot">{s.n}</span>
+                <h3>{s.title}</h3>
+                <p>{s.text}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
 
-      <section className="lp-section">
-        <h2>Built for real report work</h2>
-        <ul className="lp-features">
-          {FEATURES.map((f) => (
-            <li key={f.title}>
-              <h3>{f.title}</h3>
-              <p>{f.text}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
+        <section id="features" className="lp-section">
+          <h2>Built for real report work</h2>
+          <ul className="lp-features">
+            {FEATURES.map((f) => (
+              <li key={f.title}>
+                <h3>{f.title}</h3>
+                <p>{f.text}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-      <section className="lp-section lp-end panel">
-        <div>
-          <h2>Ready when your query is</h2>
-          <p className="muted">Exports for SSRS 2008 R2 and later, including Power BI Report Server.</p>
-        </div>
-        {start}
-      </section>
+        <section className="lp-section lp-end panel">
+          <div>
+            <h2>Ready when your query is</h2>
+            <p className="muted">Exports for SSRS 2008 R2 and later, including Power BI Report Server.</p>
+          </div>
+          <button className="btn btn-primary lp-cta" onClick={onStart}>Start building a report</button>
+        </section>
 
-      <footer className="lp-foot">Report builder · From SQL query to SSRS report</footer>
+        <footer className="lp-foot">Report builder · From SQL query to SSRS report</footer>
+      </div>
     </div>
   );
 }

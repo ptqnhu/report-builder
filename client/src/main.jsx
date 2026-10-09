@@ -18,7 +18,7 @@ function Root() {
 
   return (
     <>
-      {!building && <div className="rb"><Landing onStart={() => { location.hash = BUILD_HASH; window.scrollTo(0, 0); }} /></div>}
+      {!building && <div className="rb lp-dark"><Landing onStart={() => { location.hash = BUILD_HASH; window.scrollTo(0, 0); }} /></div>}
       <div hidden={!building}><App /></div>
     </>
   );

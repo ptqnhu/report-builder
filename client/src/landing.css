@@ -1,0 +1,484 @@
+/* Landing page. Only the landing page uses these styles; the builder's look is in styles.css.
+   The Inter Tight headline font is loaded at the top of styles.css. */
+
+/* Colours come from the .rb block at the top of styles.css, shared with the builder. */
+
+.lp {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 40px)
+}
+
+/* Buttons */
+.lp-dark .btn {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink);
+  text-decoration: none;
+  display: inline-block
+}
+
+.lp-dark .btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600
+}
+
+.lp-dark .btn-primary:hover {
+  background: #D7FF5C;
+  border-color: #D7FF5C
+}
+
+.lp-cta {
+  padding: 12px 22px;
+  font-size: 15px;
+  border-radius: 8px
+}
+
+.lp-dark .lp-ghost {
+  border: 1.5px solid var(--accent);
+  color: var(--ink)
+}
+
+.lp-dark .lp-ghost:hover {
+  background: var(--accent-soft)
+}
+
+/* Top bar and hero share one full-width band with the green glow on the right. */
+.lp-band {
+  background:
+    radial-gradient(ellipse 48% 95% at 88% 50%, rgba(156, 220, 70, 1) 0%, rgba(118, 186, 52, .92) 32%, rgba(70, 126, 30, .55) 58%, transparent 80%),
+    linear-gradient(to bottom, transparent 85%, var(--bg));
+  overflow: hidden
+}
+
+.lp-top {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(198, 244, 50, .14)
+}
+
+.lp-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -0.01em
+}
+
+.lp-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 16px
+}
+
+.lp-mark.sm {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  font-size: 11px
+}
+
+.lp-links {
+  display: flex;
+  gap: clamp(24px, 5vw, 64px)
+}
+
+.lp-links a {
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500
+}
+
+.lp-links a:hover {
+  color: var(--accent)
+}
+
+.lp-dark .lp-pill {
+  justify-self: end;
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 7px 14px
+}
+
+.lp-dark .lp-pill:hover {
+  background: var(--accent);
+  color: var(--accent-ink)
+}
+
+.lp-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+  gap: 32px;
+  align-items: center;
+  min-height: 680px;
+  padding-top: clamp(40px, 7vw, 96px);
+  padding-bottom: clamp(56px, 8vw, 112px)
+}
+
+.lp-hero h1 {
+  font-family: var(--display);
+  font-size: clamp(40px, 5.4vw, 74px);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  color: #fff
+}
+
+.lp-word {
+  display: block;
+  margin-top: 8px;
+  color: var(--accent);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.03em
+}
+
+.lp-lead {
+  margin-top: 24px !important;
+  max-width: 54ch;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--ink2)
+}
+
+.lp-lead strong {
+  color: #fff;
+  font-weight: 600
+}
+
+.lp-stats {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 36px 0 0;
+  row-gap: 16px
+}
+
+.lp-stats div {
+  padding: 0 28px;
+  border-left: 1px solid var(--line)
+}
+
+.lp-stats div:first-child {
+  padding-left: 0;
+  border-left: none
+}
+
+.lp-stats dt {
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.1
+}
+
+.lp-stats dd {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--ink2)
+}
+
+.lp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 36px
+}
+
+.lp-local {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px !important;
+  font-size: 14px;
+  color: var(--ink2)
+}
+
+.lp-local strong {
+  color: var(--ink)
+}
+
+.lp-dark .conn-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft)
+}
+
+/* The tilted "app screen" on the right, standing in for the phone in a product shot. */
+.lp-device {
+  justify-self: center;
+  width: min(360px, 100%);
+  transform: perspective(1400px) rotateY(-16deg) rotateX(6deg) rotateZ(-9deg);
+  border-radius: 44px;
+  padding: 11px;
+  background: linear-gradient(145deg, #4A5047, #1C1F1A 40%, #2E332B);
+  box-shadow: 30px 50px 80px -20px rgba(0, 0, 0, .75), inset 0 0 0 1px rgba(255, 255, 255, .08)
+}
+
+.lp-screen {
+  border-radius: 34px;
+  background: #0E110C;
+  padding: 22px 18px 18px;
+  color: var(--ink);
+  overflow: hidden
+}
+
+.lp-screen-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--ink3)
+}
+
+.lp-screen-hi {
+  margin-top: 14px !important;
+  font-family: var(--display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff
+}
+
+.lp-screen-sub {
+  font-size: 11.5px;
+  color: var(--ink3)
+}
+
+.lp-screen-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #171C14;
+  font-size: 11.5px;
+  color: var(--ink2)
+}
+
+.lp-screen-total strong {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.02em
+}
+
+.lp-mini {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums
+}
+
+.lp-mini th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--ink3);
+  padding: 4px 4px 6px
+}
+
+.lp-mini td {
+  padding: 5px 4px;
+  border-top: 1px solid var(--line2);
+  color: var(--ink)
+}
+
+.lp-mini th:not(:first-child),
+.lp-mini td:not(:first-child) {
+  text-align: right
+}
+
+.lp-action-card {
+  margin-top: 14px;
+  border-radius: 26px;
+  padding: 18px 16px 16px;
+  background: linear-gradient(160deg, #EDFF9E 0%, #C6F432 45%, #A5D420 100%);
+  color: var(--accent-ink)
+}
+
+.lp-action-kicker {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  opacity: .75
+}
+
+.lp-action-title {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-top: 2px !important
+}
+
+.lp-action-big {
+  font-family: var(--display);
+  font-size: 58px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1
+}
+
+.lp-action-pills {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px
+}
+
+.lp-action-pills span {
+  flex: 1;
+  text-align: center;
+  padding: 9px 4px;
+  border-radius: 999px;
+  background: #3A4A10;
+  color: #E4FF8A;
+  font-size: 11px;
+  font-weight: 600
+}
+
+/* Sections below the hero */
+.lp-section {
+  padding: clamp(40px, 6vw, 72px) 0;
+  border-top: 1px solid var(--line)
+}
+
+.lp-section h2 {
+  font-family: var(--display);
+  font-size: clamp(26px, 3vw, 34px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-bottom: 24px
+}
+
+.lp-dark .panel {
+  background: var(--surface);
+  border-color: var(--line)
+}
+
+.lp-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px
+}
+
+.lp-stages .panel {
+  padding: 24px;
+  border-radius: 14px
+}
+
+.lp-stages .panel+.panel {
+  margin-top: 0
+}
+
+.lp-dark .lp-dot {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  margin-bottom: 14px
+}
+
+.lp-stages h3,
+.lp-features h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px
+}
+
+.lp-stages p,
+.lp-features p {
+  color: var(--ink2);
+  font-size: 14.5px
+}
+
+.lp-features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px
+}
+
+.lp-features li {
+  border-left: 2px solid var(--accent);
+  padding-left: 16px
+}
+
+.lp-end {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin: clamp(16px, 3vw, 32px) 0;
+  padding: 32px;
+  border-radius: 18px;
+  border-color: rgba(198, 244, 50, .35) !important;
+  background: radial-gradient(ellipse 50% 120% at 100% 50%, rgba(150, 214, 64, .22), transparent 70%), var(--surface) !important
+}
+
+.lp-end h2 {
+  margin-bottom: 4px
+}
+
+.lp-foot {
+  padding: 24px 0 36px;
+  font-size: 13px;
+  color: var(--ink3)
+}
+
+@media (max-width:900px) {
+  .lp-top {
+    grid-template-columns: 1fr auto
+  }
+
+  .lp-links {
+    display: none
+  }
+
+  .lp-band {
+    background:
+      radial-gradient(ellipse 90% 40% at 60% 78%, rgba(150, 214, 64, .9) 0%, rgba(80, 140, 34, .5) 45%, transparent 75%)
+  }
+
+  .lp-hero {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    gap: 56px
+  }
+
+  .lp-device {
+    width: min(320px, 90%);
+    transform: perspective(1400px) rotateY(-8deg) rotateZ(-5deg)
+  }
+
+  .lp-stages,
+  .lp-features {
+    grid-template-columns: 1fr
+  }
+}
