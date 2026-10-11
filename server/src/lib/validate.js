@@ -35,6 +35,7 @@ export function sanitizeTemplate(tpl = {}) {
   out.order = Array.isArray(out.order) ? out.order.map(String) : [];
   out.cols = out.cols && typeof out.cols === "object" ? out.cols : {};
   out.decimals = Math.min(4, Math.max(0, Number(out.decimals) || 0));
+  out.logo = !!out.logo;
   return out;
 }
 

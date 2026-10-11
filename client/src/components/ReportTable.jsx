@@ -1,7 +1,13 @@
+import { useState } from "react";
 import { alignOf, formatValue } from "@report-builder/shared";
 import { WIDTHS, computeTotals } from "../utils/table.js";
 
-export default function ReportTable({ cols, rows, tpl, sort, onSort, limit }) {
+/**
+ * The report's table. With onMove(fromKey, toKey, after), the column headings can be dragged to reorder the
+ * columns; Alt+Left / Alt+Right on a focused heading moves it one place too.
+ */
+export default function ReportTable({ cols, rows, tpl, sort, onSort, onMove, limit }) {
+  const [drag, setDrag] = useState(null); // { from: key, over: key, after: bool } while a heading is dragged
   const shown = limit ? rows.slice(0, limit) : rows;
   const totals = tpl.totals ? computeTotals(cols, rows) : null;
   const firstText = cols.findIndex((c) => !totals || !totals[c.key]);
@@ -16,12 +22,36 @@ export default function ReportTable({ cols, rows, tpl, sort, onSort, limit }) {
         <thead>
           <tr>
             {tpl.rowNumbers && <th className="rt-rn">#</th>}
-            {cols.map((c) => {
+            {cols.map((c, i) => {
               const active = sort && sort.key === c.key;
+              const dropping = drag && drag.over === c.key && drag.from !== c.key;
+              const cls = [drag?.from === c.key && "drag-src", dropping && (drag.after ? "drop-after" : "drop-before")].filter(Boolean).join(" ");
+              const dragProps = onMove && {
+                draggable: true,
+                title: "Drag to move this column",
+                onDragStart: (e) => { e.dataTransfer.setData("text/plain", c.key); e.dataTransfer.effectAllowed = "move"; setDrag({ from: c.key, over: null, after: false }); },
+                onDragOver: (e) => {
+                  if (!drag) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  const r = e.currentTarget.getBoundingClientRect();
+                  const after = e.clientX > r.left + r.width / 2;
+                  if (drag.over !== c.key || drag.after !== after) setDrag({ ...drag, over: c.key, after });
+                },
+                onDrop: (e) => { e.preventDefault(); if (drag) onMove(drag.from, c.key, drag.after); setDrag(null); },
+                onDragEnd: () => setDrag(null),
+              };
+              const onKeyDown = onMove && ((e) => {
+                if (!e.altKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+                e.preventDefault();
+                const next = cols[i + (e.key === "ArrowLeft" ? -1 : 1)];
+                if (next) onMove(c.key, next.key, e.key === "ArrowRight");
+              });
               return (
-                <th key={c.key} style={{ textAlign: alignOf(c), minWidth: WIDTHS[c.width] }}
+                <th key={c.key} style={{ textAlign: alignOf(c), minWidth: WIDTHS[c.width] }} className={cls || undefined} {...dragProps}
                     aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
-                  <button className="rt-sort" onClick={() => onSort && onSort(c.key)}>
+                  <button className="rt-sort" onClick={() => onSort && onSort(c.key)} onKeyDown={onKeyDown}
+                    aria-keyshortcuts={onMove ? "Alt+ArrowLeft Alt+ArrowRight" : undefined}>
                     {c.label}
                     <span className="arrow" aria-hidden="true">{active ? (sort.dir === "asc" ? "▲" : "▼") : ""}</span>
                   </button>

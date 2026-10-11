@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { buildConfig, parseServer } from "../src/services/db/connectionConfig.js";
 import { createConnectionManager } from "../src/services/db/connectionManager.js";
 import { parseInstanceNames, serverNameFor } from "../src/services/db/localInstances.js";
+import { sqlErrorMessage } from "../src/services/db/errors.js";
 import { fakePool } from "./helpers/fakeSqlServer.js";
 
 test("parses server names with instances and ports", () => {
@@ -68,6 +69,11 @@ test("finds local instance names in reg query output", () => {
   const out = "\r\nHKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Microsoft SQL Server\\Instance Names\\SQL\r\n" +
     "    MSSQLSERVER    REG_SZ    MSSQL16.MSSQLSERVER\r\n    SQLEXPRESS    REG_SZ    MSSQL16.SQLEXPRESS\r\n";
   assert.deepEqual(parseInstanceNames(out).map(serverNameFor), ["localhost", "localhost\\SQLEXPRESS"]);
+});
+
+test("SQL errors drop the ODBC driver's bracketed prefix", () => {
+  const e = new Error("[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Incorrect syntax near the keyword 'FROM'.");
+  assert.equal(sqlErrorMessage(e), "SQL Server says: Incorrect syntax near the keyword 'FROM'.");
 });
 
 test("connection failures become friendly messages", async () => {

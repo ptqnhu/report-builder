@@ -1,8 +1,10 @@
-import { NUMERIC, idLike, alignOf } from "@report-builder/shared";
-import { xesc, lit, inch, guid, rdlIdent } from "./xml.js";
+import { NUMERIC, idLike, alignOf, BRAND, LOANMART_LOGO_PNG, LOGO_SIZE, slicerItems, layoutGrid, booleanLabels, displayOf } from "@report-builder/shared";
+import { xesc, lit, inch, guid, rdlIdent, vbStr } from "./xml.js";
 import { NET_TYPE, NET_DATE, THEME_RDL, DENSITY_RDL, netFormat, colWidth } from "./styles.js";
 import { textbox } from "./textbox.js";
 import { buildFilters } from "./filters.js";
+import { bandBackgroundPng } from "./bandImage.js";
+import { slicerRdl } from "./slicers.js";
 
 const DATASET = "MainDataSet";
 const DATASOURCE = "MainDataSource";
@@ -23,11 +25,62 @@ export function exportWarnings(columns) {
   return w;
 }
 
+const LOGO_IMAGE = "LoanMartLogo";
+const BAND_IMAGE = "LoanMartBand";
+
+/**
+ * LoanMart header band: a green panel as wide as the report, with the logo filling its left end (flush with the
+ * band's top, bottom and left edges), then the organisation
+ * (gold), title, description and run date. The band's background is an image of the gradient with the "LM" line art
+ * (see bandImage.js), made at the band's size. Followed by a thin gold stripe.
+ * Returns { xml, height, image } (inches; image = the background PNG in base64, to embed as BAND_IMAGE).
+ */
+function headerBand({ tpl, title, desc, width, nm, generated }) {
+  const pad = 0.16, gap = 0.2;
+
+  // Middle column: organisation, title, description, run date
+  const lines = [];
+  if (tpl.org) lines.push({ name: "OrgName", value: lit(tpl.org.toUpperCase()), h: 0.2, size: 8, bold: true, color: BRAND.gold });
+  lines.push({ name: "ReportTitle", value: lit(title || "Report"), h: 0.42, size: 20, bold: true, color: "White" });
+  if (desc) lines.push({ name: "ReportDescription", value: lit(desc), h: 0.24, size: 9.5, color: "#CFE3D6" });
+  lines.push({ name: "ReportMeta", value: generated, h: 0.22, size: 8.5, color: "#9CC3AC" });
+  const textH = lines.reduce((a, l) => a + l.h, 0);
+  const height = Math.max(0.95, textH + pad * 2);
+  const logoW = height * LOGO_SIZE.w / LOGO_SIZE.h;
+
+  const items = [];
+  if (tpl.logo) {
+    items.push(`<Image Name="${nm("Logo")}"><Source>Embedded</Source><Value>${LOGO_IMAGE}</Value><Sizing>FitProportional</Sizing>` +
+      `<Top>0in</Top><Left>0in</Left><Height>${inch(height)}</Height><Width>${inch(logoW)}</Width>` +
+      `<Style><Border><Style>None</Style></Border></Style></Image>`);
+  }
+  const textX = tpl.logo ? logoW + gap : pad;
+  const textW = Math.max(1.5, width - textX - pad);
+  let ty = (height - textH) / 2;
+  for (const l of lines) {
+    items.push(textbox({ name: nm(l.name), value: l.value, size: l.size, bold: l.bold, color: l.color, pad: 1, valign: "Bottom", pos: { top: ty, left: textX, height: l.h, width: textW } }));
+    ty += l.h;
+  }
+
+  const stripe = 0.05;
+  const xml =
+    `<Rectangle Name="${nm("HeaderBand")}"><ReportItems>${items.join("")}</ReportItems><KeepTogether>true</KeepTogether>` +
+    `<Top>0in</Top><Left>0in</Left><Height>${inch(height)}</Height><Width>${inch(width)}</Width>` +
+    `<Style><Border><Style>None</Style></Border><BackgroundColor>${BRAND.green}</BackgroundColor>` +
+    `<BackgroundGradientType>LeftRight</BackgroundGradientType><BackgroundGradientEndColor>${BRAND.greenDeep}</BackgroundGradientEndColor>` +
+    `<BackgroundImage><Source>Embedded</Source><Value>${BAND_IMAGE}</Value><BackgroundRepeat>Clip</BackgroundRepeat></BackgroundImage></Style></Rectangle>` +
+    `<Rectangle Name="${nm("GoldStripe")}"><Top>${inch(height)}</Top><Left>0in</Left><Height>${inch(stripe)}</Height><Width>${inch(width)}</Width>` +
+    `<Style><Border><Style>None</Style></Border><BackgroundColor>${BRAND.gold}</BackgroundColor></Style></Rectangle>`;
+  return { xml, height: height + stripe, image: bandBackgroundPng(width, height) };
+}
+
 /**
  * Builds the complete .rdl XML.
- * @param {object} a { sql, columns, effCols, tpl, title, desc, filters, colsByKey, sort, exp }
+ * @param {object} a { sql, columns, effCols, tpl, title, desc, filters, colsByKey, sort, exp, slicers }
+ *   slicers: from planSlicers(), the filters readers change in SSRS.
+ *   paramLayout: where the user arranged them on the parameter bar ({ cols, rows, cells }, see layoutGrid).
  */
-export function buildRdl({ sql, columns, effCols, tpl, title, desc, filters, colsByKey, sort, exp }) {
+export function buildRdl({ sql, columns, effCols, tpl, title, desc, filters, colsByKey, sort, exp, slicers = [], paramLayout = {} }) {
   const v2016 = exp.schema !== "2010";
   const fieldOf = {};
   const fieldNames = new Set();
@@ -46,13 +99,15 @@ export function buildRdl({ sql, columns, effCols, tpl, title, desc, filters, col
   effCols.forEach((c) => tcols.push({ c, width: colWidth(c) }));
   let tableW = tcols.reduce((a, t) => a + t.width, 0);
   if (tpl.layout === "fit") { const k = usable / tableW; tcols.forEach((t) => (t.width *= k)); tableW = usable; }
-  const headerW = Math.min(usable, Math.max(tableW, 4));
+  // The LoanMart header band runs to the end of the table, however wide (at least 5in, for the logo and title).
+  // Other styles' headings stay within one page.
+  const headerW = th.band ? Math.max(tableW, 5) : Math.min(usable, Math.max(tableW, 4));
   const sectionW = Math.max(tableW, headerW);
   const footW = Math.min(usable, sectionW);
 
   const align = (c) => ({ left: "Left", right: "Right", center: "Center" })[alignOf(c)];
   const zebra = tpl.zebra ? `=IIF(RowNumber(Nothing) Mod 2 = 0, "${th.zebra}", "White")` : null;
-  const rowLine = { color: "#E6EAF0", width: "0.75pt" };
+  const rowLine = { color: th.rowLine || "#E6EAF0", width: "0.75pt" };
 
   // ----- totals
   const totals = tpl.totals
@@ -75,14 +130,17 @@ export function buildRdl({ sql, columns, effCols, tpl, title, desc, filters, col
   const detailCells = tcols.map((t) => {
     if (t.rn) return textbox({ name: nm("RowNum"), value: "=RowNumber(Nothing)", size: dn.size, color: "#7A859A", align: "Right", pad: dn.pad, bg: zebra, bottom: rowLine, valign: "Top" });
     const c = t.c, F = fieldOf[c.key];
+    // Yes/No labels and text case follow the column's display option; numbers and dates use the format string
+    const [yes, no] = c.type === "Boolean" ? booleanLabels(c) : [];
+    const textCase = c.type === "Text" ? { upper: "UCase", lower: "LCase" }[displayOf(c)] : null;
     const value = c.type === "Boolean"
-      ? `=IIF(IsNothing(Fields!${F}.Value), "", IIF(CBool(Fields!${F}.Value), "Yes", "No"))`
-      : `=Fields!${F}.Value`;
-    return textbox({ name: nm(`val_${F}`), value, fmt: netFormat(c, tpl), size: dn.size, align: align(c), pad: dn.pad, bg: zebra, bottom: rowLine, valign: "Top" });
+      ? `=IIF(IsNothing(Fields!${F}.Value), "", IIF(CBool(Fields!${F}.Value), ${vbStr(yes)}, ${vbStr(no)}))`
+      : textCase ? `=${textCase}(Fields!${F}.Value)` : `=Fields!${F}.Value`;
+    return textbox({ name: nm(`val_${F}`), value, fmt: netFormat(c, tpl), size: dn.size, color: th.ink, align: align(c), pad: dn.pad, bg: zebra, bottom: rowLine, valign: "Top" });
   });
 
   const totalCells = tcols.map((t, i) => {
-    const base = { size: dn.size, bold: true, pad: dn.pad, bg: "#EEF1F6", top: { color: "#18233A", width: "1.5pt" } };
+    const base = { size: dn.size, bold: true, color: th.ink, pad: dn.pad, bg: th.totalBg || "#EEF1F6", top: { color: th.totalLine || "#18233A", width: "1.5pt" } };
     if (!t.rn && totals[t.c.key]) {
       const F = fieldOf[t.c.key];
       return textbox({ ...base, name: nm(`tot_${F}`), value: `=${totals[t.c.key]}(Fields!${F}.Value)`, fmt: netFormat(t.c, tpl), align: align(t.c) });
@@ -90,22 +148,39 @@ export function buildRdl({ sql, columns, effCols, tpl, title, desc, filters, col
     return textbox({ ...base, name: nm(`tot_label_${i + 1}`), value: i === totalLabelAt ? "Total" : "", align: t.rn ? "Right" : "Left" });
   });
 
-  const fl = buildFilters(filters, colsByKey, fieldOf, exp.filterMode, tpl);
+  const paramNames = new Set();
+  const fl = buildFilters(filters, colsByKey, fieldOf, exp.filterMode, tpl, paramNames);
+  const sl = slicerRdl({ slicers, colsByKey, fieldOf, tpl, used: paramNames, dataSource: DATASOURCE });
 
   // ----- header block above the table
   let y = 0;
   const head = [];
+  let bandImage = "";
   const block = (name, value, height, extra = {}) => {
     head.push(textbox({ name: nm(name), value, pad: 2, pos: { top: y, left: 0, height, width: headerW }, ...extra }));
     y += height + 0.03;
   };
-  if (tpl.org) block("OrgName", lit(tpl.org), 0.25, { size: 10, bold: true, color: "#4A566E" });
-  block("ReportTitle", lit(title || "Report"), 0.42, { size: 18, bold: true, color: "#18233A", left: tpl.theme === "contrast" ? { color: "#2D4FD6", width: "4pt" } : null });
-  if (desc) block("ReportDescription", lit(desc), 0.26, { size: 10, color: "#4A566E" });
-  if (fl.summary.length) block("FilterSummary", lit("Filters: " + fl.summary.join("; ")), 0.24, { size: 9, color: "#2340B0" });
-  block("ReportMeta",
-    `="Generated " & Format(Globals!ExecutionTime, "${NET_DATE[tpl.dateFormat]}") & "     " & CountRows("${DATASET}") & " rows"`,
-    0.26, { size: 9, color: "#7A859A", bottom: tpl.theme === "ledger" ? { color: "#18233A", width: "2.25pt" } : null });
+  // "Generated 11 Oct 2026  ·  5 columns  ·  1,234 rows", the row count worked out by SSRS over every row
+  const columnsText = `${effCols.length} ${effCols.length === 1 ? "column" : "columns"}`;
+  const generated = `="Generated " & Format(Globals!ExecutionTime, "${NET_DATE[tpl.dateFormat]}") & "  ·  ${columnsText}  ·  " & ` +
+    `Format(CountRows("${DATASET}"), "#,0") & IIF(CountRows("${DATASET}") = 1, " row", " rows")`;
+  if (th.band) {
+    const band = headerBand({ tpl, title, desc, width: headerW, nm, generated });
+    head.push(band.xml);
+    bandImage = band.image;
+    y = band.height + 0.06;
+    if (fl.summary.length) block("FilterSummary", lit("Filters: " + fl.summary.join("; ")), 0.24, { size: 9, bold: true, color: BRAND.green });
+    if (sl.summary) block("SlicerSummary", sl.summary, 0.24, { size: 9, color: BRAND.ink });
+  } else {
+    if (tpl.org) block("OrgName", lit(tpl.org), 0.25, { size: 10, bold: true, color: "#4A566E" });
+    block("ReportTitle", lit(title || "Report"), 0.42, { size: 18, bold: true, color: "#18233A", left: tpl.theme === "contrast" ? { color: "#2D4FD6", width: "4pt" } : null });
+    if (desc) block("ReportDescription", lit(desc), 0.26, { size: 10, color: "#4A566E" });
+    if (fl.summary.length) block("FilterSummary", lit("Filters: " + fl.summary.join("; ")), 0.24, { size: 9, color: "#2340B0" });
+    if (sl.summary) block("SlicerSummary", sl.summary, 0.24, { size: 9, color: "#4A566E" });
+    block("ReportMeta",
+      generated,
+      0.26, { size: 9, color: "#7A859A", bottom: tpl.theme === "ledger" ? { color: "#18233A", width: "2.25pt" } : null });
+  }
   y += 0.12;
 
   // ----- tablix
@@ -151,15 +226,26 @@ ${textbox({ name: nm("PageNumber"), value: `="Page " & Globals!PageNumber & " of
     ? `<DataSourceReference>${xesc(exp.dsRef.trim())}</DataSourceReference>`
     : `<ConnectionProperties><DataProvider>SQL</DataProvider><ConnectString>${xesc(`Data Source=${exp.server.trim()};Initial Catalog=${exp.database.trim()}`)}</ConnectString>${integrated ? "<IntegratedSecurity>true</IntegratedSecurity>" : ""}</ConnectionProperties><rd:SecurityType>${integrated ? "Integrated" : "DataBase"}</rd:SecurityType>`;
   const fieldsXml = columns.map((c) => `<Field Name="${fieldOf[c.key]}"><DataField>${xesc(c.name)}</DataField><rd:TypeName>${NET_TYPE[c.type]}</rd:TypeName></Field>`).join("\n");
-  const filtersXml = fl.filters.length
-    ? `<Filters>${fl.filters.map((f) => `<Filter><FilterExpression>${xesc(f.expr)}</FilterExpression><Operator>${f.op}</Operator><FilterValues>${f.values.map((v) => `<FilterValue>${xesc(v)}</FilterValue>`).join("")}</FilterValues></Filter>`).join("")}</Filters>`
+  const allFilters = [...fl.filters, ...sl.filters];
+  const filtersXml = allFilters.length
+    ? `<Filters>${allFilters.map((f) => `<Filter><FilterExpression>${xesc(f.expr)}</FilterExpression><Operator>${f.op}</Operator><FilterValues>${f.values.map((v) => `<FilterValue>${xesc(v)}</FilterValue>`).join("")}</FilterValues></Filter>`).join("")}</Filters>`
     : "";
 
-  const paramsXml = fl.params.length
-    ? `<ReportParameters>${fl.params.map((p) => `<ReportParameter Name="${p.name}"><DataType>${p.dataType}</DataType><DefaultValue><Values><Value>${xesc(p.def)}</Value></Values></DefaultValue>${p.dataType === "String" ? "<AllowBlank>true</AllowBlank>" : ""}<Prompt>${xesc(p.prompt)}</Prompt></ReportParameter>`).join("")}</ReportParameters>`
-    : "";
-  const paramsLayoutXml = fl.params.length && v2016
-    ? `<ReportParametersLayout><GridLayoutDefinition><NumberOfColumns>4</NumberOfColumns><NumberOfRows>${Math.ceil(fl.params.length / 4)}</NumberOfRows><CellDefinitions>${fl.params.map((p, i) => `<CellDefinition><ColumnIndex>${i % 4}</ColumnIndex><RowIndex>${Math.floor(i / 4)}</RowIndex><ParameterName>${p.name}</ParameterName></CellDefinition>`).join("")}</CellDefinitions></GridLayoutDefinition></ReportParametersLayout>`
+  // Readers' slicers first, then any of the author's filters exported as parameters.
+  const params = [
+    ...sl.params,
+    ...fl.params.map((p) => ({ name: p.name, xml: `<ReportParameter Name="${p.name}"><DataType>${p.dataType}</DataType><DefaultValue><Values><Value>${xesc(p.def)}</Value></Values></DefaultValue>${p.dataType === "String" ? "<AllowBlank>true</AllowBlank>" : ""}<Prompt>${xesc(p.prompt)}</Prompt></ReportParameter>` })),
+  ];
+  const paramsXml = params.length ? `<ReportParameters>${params.map((p) => p.xml).join("")}</ReportParameters>` : "";
+  // Parameter bar: the readers' slicers where the user placed them, then the author's own parameters in the rows below.
+  const grid = layoutGrid(slicerItems(slicers).map((i) => i.id), paramLayout);
+  const cells = [
+    ...sl.params.map((p) => ({ name: p.name, r: grid.cells[p.item][0], c: grid.cells[p.item][1] })),
+    ...fl.params.map((p, i) => ({ name: p.name, r: grid.rows + Math.floor(i / grid.cols), c: i % grid.cols })),
+  ];
+  const gridRows = grid.rows + Math.ceil(fl.params.length / grid.cols);
+  const paramsLayoutXml = params.length && v2016
+    ? `<ReportParametersLayout><GridLayoutDefinition><NumberOfColumns>${grid.cols}</NumberOfColumns><NumberOfRows>${gridRows}</NumberOfRows><CellDefinitions>${cells.map((x) => `<CellDefinition><ColumnIndex>${x.c}</ColumnIndex><RowIndex>${x.r}</RowIndex><ParameterName>${x.name}</ParameterName></CellDefinition>`).join("")}</CellDefinitions></GridLayoutDefinition></ReportParametersLayout>`
     : "";
 
   const ns = v2016
@@ -179,8 +265,10 @@ ${textbox({ name: nm("PageNumber"), value: `="Page " & Globals!PageNumber & " of
 ${fieldsXml}
 </Fields>
 ${filtersXml}
-</DataSet></DataSets>
+</DataSet>${sl.datasets.join("")}</DataSets>
 ${layout}
+${bandImage ? `<EmbeddedImages>${tpl.logo ? `<EmbeddedImage Name="${LOGO_IMAGE}"><MIMEType>image/png</MIMEType><ImageData>${LOANMART_LOGO_PNG}</ImageData></EmbeddedImage>` : ""}` +
+    `<EmbeddedImage Name="${BAND_IMAGE}"><MIMEType>image/png</MIMEType><ImageData>${bandImage}</ImageData></EmbeddedImage></EmbeddedImages>` : ""}
 ${paramsXml}
 ${paramsLayoutXml}
 <rd:ReportUnitType>Inch</rd:ReportUnitType>

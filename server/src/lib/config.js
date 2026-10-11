@@ -9,6 +9,11 @@ export const settings = {
   /** Rows returned for the on-screen preview. The exported report still returns every row. */
   previewRowLimit: num(process.env.PREVIEW_ROW_LIMIT, 200),
   queryTimeoutMs: num(process.env.QUERY_TIMEOUT_SECONDS, 60) * 1000,
+  /** Ad hoc exports (CSV, Excel) run the whole query; they stop at this many rows (Excel's own limit is 1,048,575). */
+  exportRowLimit: Math.min(num(process.env.EXPORT_ROW_LIMIT, 500_000), 1_048_575),
+  /** PDFs are for reading and printing, so they stop sooner (20,000 rows is about 600 pages). */
+  pdfRowLimit: num(process.env.PDF_ROW_LIMIT, 20_000),
+  exportTimeoutMs: num(process.env.EXPORT_TIMEOUT_SECONDS, 300) * 1000,
   /** Optional allow-list of SQL Server host names, e.g. "sqlprod01,sqlrep02". Empty = any. */
   /** ODBC driver used for "This computer" (Windows) sign-in to a local SQL Server. */
   odbcDriver: process.env.ODBC_DRIVER || "ODBC Driver 18 for SQL Server",

@@ -1,7 +1,10 @@
 import { formatValue, fileSlug } from "@report-builder/shared";
 
 export function downloadText(content, filename, mime) {
-  const blob = new Blob([content], { type: mime });
+  downloadBlob(new Blob([content], { type: mime }), filename);
+}
+
+export function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

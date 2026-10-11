@@ -28,7 +28,7 @@ const Icon = ({ name, size = 16 }) => (
 const STAGES = [
   { title: "Connect and query", text: "Pick a SQL Server, choose a database and paste a SELECT statement. SQL Server tells the app exactly which columns and types come back." },
   { title: "Shape the report", text: "Choose columns, confirm data types, pick a template, then add a title and filters. Every change shows up on real rows straight away." },
-  { title: "Export to SSRS", text: "Download an .rdl file and upload it to your report server. It runs your query each time it opens and returns every row." },
+  { title: "Export to SSRS or a file", text: "Download an .rdl file and upload it to your report server, or skip the report and download every row as a CSV or Excel file." },
 ];
 
 const FEATURES = [
@@ -181,29 +181,37 @@ export default function Landing({ onStart }) {
     api.localServers().then((list) => setLocal(list.find((i) => i.running) || null)).catch(() => {});
   }, []);
 
-  const getStarted = (label = "Get started") => (
-    <button className="btn btn-primary lp-cta" onClick={onStart}>{label} <Icon name="arrow" size={15} /></button>
+  /** The two ways into the builder: a formatted SSRS report, or a plain CSV / Excel export of the rows. */
+  const getStarted = () => (
+    <div className="lp-start">
+      <button className="btn btn-primary lp-cta" onClick={() => onStart("ssrs")}>Create SSRS report <Icon name="arrow" size={15} /></button>
+      <button className="btn lp-cta" onClick={() => onStart("adhoc")}>Create ad hoc export <Icon name="arrow" size={15} /></button>
+    </div>
   );
 
   return (
     <>
     <Orbs />
     <div className="lp-page">
-      <div className="lp-hero-wrap">
-        <header className="lp lp-top">
+      <header className="lp-bar">
+        <div className="lp lp-top">
           <p className="lp-brand"><Logo size={30} />Report builder</p>
           <nav className="lp-links" aria-label="Page sections">
             <a href="#how">How it works</a>
             <a href="#features">Features</a>
             <a href="#templates">Templates</a>
-            <button className="btn btn-primary btn-sm" onClick={onStart}>Get started</button>
+            <button className="btn btn-primary btn-sm" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Get started</button>
           </nav>
-        </header>
+        </div>
+      </header>
+
+      <div className="lp-hero-wrap">
 
         <section className="lp lp-hero">
           <h1>Turn any SQL query into a finished SSRS report</h1>
           <p className="lp-lead">
-            Write a SELECT statement, shape the result on real data, and download a ready-to-upload .rdl file.
+            Write a SELECT statement, shape the result on real data, and download a ready-to-upload .rdl file,
+            or export every row to CSV or Excel.
             No Report Builder, no Visual Studio, no hand-editing XML.
           </p>
           <div className="lp-actions">
@@ -302,7 +310,7 @@ export default function Landing({ onStart }) {
             <h2>Ready when your query is</h2>
             <p>Exports for SSRS 2008 R2 and later, including Power BI Report Server.</p>
           </div>
-          {getStarted("Start building a report")}
+          {getStarted()}
         </div>
       </section>
 

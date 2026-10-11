@@ -2,19 +2,7 @@ import { NUMERIC, idLike } from "@report-builder/shared";
 
 export const WIDTHS = { auto: undefined, narrow: 90, medium: 160, wide: 260 };
 
-export function sortRows(rows, sort, colsByKey) {
-  if (!sort || !colsByKey[sort.key]) return rows;
-  const dir = sort.dir === "asc" ? 1 : -1;
-  return [...rows].sort((x, y) => {
-    const a = x[sort.key], b = y[sort.key];
-    if (a === null && b === null) return 0;
-    if (a === null) return 1;
-    if (b === null) return -1;
-    if (a instanceof Date) return (a - b) * dir;
-    if (typeof a === "number" || typeof a === "boolean") return (Number(a) - Number(b)) * dir;
-    return String(a).localeCompare(String(b), undefined, { numeric: true }) * dir;
-  });
-}
+export { sortRows } from "@report-builder/shared"; // shared so ad hoc exports sort like the preview
 
 /** Sum for numbers, average for percentages. Returns null when nothing is totalled. */
 export function computeTotals(cols, rows) {

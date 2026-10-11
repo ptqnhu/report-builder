@@ -15,7 +15,7 @@ export function effectiveColumns(columns, tpl) {
   ];
   return ordered.map((c) => {
     const s = tpl.cols[c.name] || {};
-    return { ...c, label: s.label || prettify(c.name), align: s.align || "auto", width: s.width || "auto", wrap: !!s.wrap };
+    return { ...c, label: s.label || prettify(c.name), align: s.align || "auto", width: s.width || "auto", wrap: !!s.wrap, display: s.display || "auto" };
   });
 }
 

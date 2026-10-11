@@ -1,6 +1,7 @@
 import { NUMERIC } from "./constants.js";
-import { idLike, pad } from "./text.js";
+import { pad } from "./text.js";
 import { parseLocalDate, fmtDate } from "./dates.js";
+import { numberSpec, formatNumber, booleanLabels, dateSpec, displayOf } from "./display.js";
 
 /** Converts a raw value (from CSV or sample data) into the JS value for a type, or null. */
 export function coerce(v, type) {
@@ -31,19 +32,31 @@ export function coerce(v, type) {
   return String(v);
 }
 
-/** Formats a coerced value for display using the template's settings. */
+/** Formats a coerced value for display: the column's display option (see display.js), else the template's settings. */
 export function formatValue(v, col, tpl) {
   if (v === null || v === undefined) return "";
-  const dec = Number(tpl.decimals);
-  const num = (x, d) => x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
-  switch (col.type) {
-    case "Integer": return idLike(col.name) ? String(v) : num(v, 0);
-    case "Decimal": return num(v, dec);
-    case "Currency": return (v < 0 ? "-" : "") + (tpl.currency || "") + num(Math.abs(v), dec);
-    case "Percentage": return num(v * 100, Math.min(dec, 2)) + "%";
-    case "Date": return fmtDate(v, tpl.dateFormat);
-    case "DateTime": return `${fmtDate(v, tpl.dateFormat)} ${pad(v.getHours())}:${pad(v.getMinutes())}`;
-    case "Boolean": return v ? "Yes" : "No";
-    default: return String(v);
+  if (NUMERIC.has(col.type)) return formatNumber(v, numberSpec(col, tpl), tpl);
+  if (col.type === "Date" || col.type === "DateTime") {
+    const s = dateSpec(col, tpl);
+    const time = s.time && `${pad(v.getHours())}:${pad(v.getMinutes())}${s.seconds ? `:${pad(v.getSeconds())}` : ""}`;
+    return [s.date && fmtDate(v, s.date), time].filter(Boolean).join(" ");
   }
+  if (col.type === "Boolean") return booleanLabels(col)[v ? 0 : 1];
+  const d = displayOf(col);
+  return d === "upper" ? String(v).toUpperCase() : d === "lower" ? String(v).toLowerCase() : String(v);
+}
+
+/** Sorts rows (objects keyed by column key) by one column; empty values go last. */
+export function sortRows(rows, sort, colsByKey) {
+  if (!sort || !colsByKey[sort.key]) return rows;
+  const dir = sort.dir === "asc" ? 1 : -1;
+  return [...rows].sort((x, y) => {
+    const a = x[sort.key], b = y[sort.key];
+    if (a === null && b === null) return 0;
+    if (a === null) return 1;
+    if (b === null) return -1;
+    if (a instanceof Date) return (a - b) * dir;
+    if (typeof a === "number" || typeof a === "boolean") return (Number(a) - Number(b)) * dir;
+    return String(a).localeCompare(String(b), undefined, { numeric: true }) * dir;
+  });
 }

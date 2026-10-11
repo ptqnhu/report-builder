@@ -10,12 +10,10 @@ export function tokens(name) {
     .filter(Boolean);
 }
 
-/** "order_id" -> "Order ID" */
+/** Column names as headings, every word capitalised: "order_id" -> "Order ID", "orderDate" -> "Order Date" */
 export function prettify(name) {
-  const t = tokens(name).map((w) => (w === "id" ? "ID" : w));
-  if (!t.length) return String(name);
-  const s = t.join(" ");
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  const t = tokens(name).map((w) => (w === "id" ? "ID" : w.charAt(0).toUpperCase() + w.slice(1)));
+  return t.length ? t.join(" ") : String(name);
 }
 
 /** Columns like order_id or year shouldn't get thousands separators or totals. */

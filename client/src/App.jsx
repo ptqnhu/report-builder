@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
-import { DEFAULT_TPL, DEFAULT_EXPORT, effectiveColumns, keyBy, applyFilters, prettify } from "@report-builder/shared";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { DEFAULT_TPL, DEFAULT_EXPORT, effectiveColumns, keyBy, applyFilters, prettify, liveSlicers, suggestSlicers, applySlicers, describeSlices } from "@report-builder/shared";
 import { api } from "./api.js";
-import { STEPS } from "./steps/steps.js";
+import { STEPS, FLOWS, SHARED_STEPS, KIND_NAMES } from "./steps/steps.js";
 import StepRail from "./components/StepRail.jsx";
 import Orbs from "./components/Orbs.jsx";
+import ExportStep from "./steps/ExportStep.jsx";
 import ConnectStep from "./steps/ConnectStep.jsx";
 import QueryStep from "./steps/QueryStep.jsx";
 import ColumnsStep from "./steps/ColumnsStep.jsx";
-import TypesStep from "./steps/TypesStep.jsx";
 import TemplateStep from "./steps/TemplateStep.jsx";
 import DetailsStep from "./steps/DetailsStep.jsx";
 import ReportStep from "./steps/ReportStep.jsx";
@@ -15,14 +15,15 @@ import { usePreviewRows } from "./hooks/usePreviewRows.js";
 import { useRdlExport } from "./hooks/useRdlExport.js";
 import { sortRows } from "./utils/table.js";
 
-// Step numbers, so the flow reads clearly below.
-const CONNECT = 0, QUERY = 1, COLUMNS = 2, TYPES = 3, TEMPLATE = 4, DETAILS = 5, REPORT = 6;
 const EMPTY_ANALYSIS = { columns: [], table: null, key: null };
 
-export default function App() {
-  // Navigation
-  const [step, setStep] = useState(CONNECT);
-  const [reached, setReached] = useState(CONNECT);
+/** The builder. `kind` ("adhoc" or "ssrs") is picked on the landing page and decides the steps after Columns. */
+export default function App({ kind }) {
+  // Navigation. `step` is a step id; `reached` is how far along the flow the user has got (an index into it).
+  const flow = FLOWS[kind];
+  const [step, setStep] = useState("connect");
+  const [reached, setReached] = useState(0);
+  const at = (id) => flow.indexOf(id);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -34,27 +35,45 @@ export default function App() {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [filters, setFilters] = useState([]);
+  // Slicers: the filters readers change in SSRS. Suggested from the first rows until the user edits them.
+  const [slicers, setSlicersRaw] = useState([]);
+  const [sliceValues, setSliceValues] = useState({}); // what the preview is sliced by; readers' choices aren't exported
+  const slicersEdited = useRef(false);
+  const [paramLayout, setParamLayout] = useState({}); // where the slicers sit on the parameter bar grid (exported)
+  const setSlicers = (fn) => { slicersEdited.current = true; setSlicersRaw(fn); };
+  /** Renames a filter (side: "from"/"to" for one half of a range); "" goes back to the default name. */
+  const renameSlicer = (col, side, name) => setSlicers((ss) => ss.map((s) => (s.col === col ? { ...s, prompts: { ...s.prompts, [side || "main"]: name } } : s)));
   const [sort, setSort] = useState(null);
   const [exp, setExp] = useState(DEFAULT_EXPORT);
 
   const columns = analysis.columns;
   const setColumns = (fn) => setAnalysis((a) => ({ ...a, columns: typeof fn === "function" ? fn(a.columns) : fn }));
 
-  const go = (n) => { setError(""); setStep(n); setReached((r) => Math.max(r, n)); };
+  const go = (id) => { setError(""); setStep(id); setReached((r) => Math.max(r, at(id))); };
+
+  /** Switching kind keeps the shared steps (connection, query, columns) but not the old kind's own steps. */
+  const lastKind = useRef(kind);
+  useEffect(() => {
+    if (lastKind.current === kind) return;
+    lastKind.current = kind;
+    setReached((r) => Math.min(r, SHARED_STEPS - 1));
+    if (!FLOWS[kind].includes(step)) setStep(FLOWS[kind][SHARED_STEPS - 1]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind]);
 
   /** The server forgot the connection (idle timeout or restart): send the user back to reconnect. */
   function handleExpired(e) {
     setConnection(null);
     setAnalysis(EMPTY_ANALYSIS);
-    setStep(CONNECT);
-    setReached(CONNECT);
+    setStep("connect");
+    setReached(at("connect"));
     setError(e.message);
   }
 
   function onConnected(conn) {
     setConnection(conn);
     setAnalysis(EMPTY_ANALYSIS); // a new database means the query must be read again
-    setReached(CONNECT);
+    setReached(at("connect"));
     setExp((e) => ({ ...e, server: conn.server, database: conn.database, dsAuth: conn.authType === "sql" ? "sql" : "windows" }));
     setError("");
   }
@@ -63,7 +82,7 @@ export default function App() {
     if (connection) api.disconnect(connection.connectionId).catch(() => {});
     setConnection(null);
     setAnalysis(EMPTY_ANALYSIS);
-    setReached(CONNECT);
+    setReached(at("connect"));
   }
 
   // Close the server-side connection when the tab is closed.
@@ -83,35 +102,62 @@ export default function App() {
   const colsByKey = useMemo(() => keyBy(effCols), [effCols]);
   const sortedAll = useMemo(() => sortRows(rows, sort, colsByKey), [rows, sort, colsByKey]);
   const filteredRows = useMemo(() => sortRows(applyFilters(rows, filters, colsByKey), sort, colsByKey), [rows, filters, colsByKey, sort]);
+  const activeSlicers = useMemo(() => liveSlicers(slicers, colsByKey), [slicers, colsByKey]);
+  const showing = describeSlices(activeSlicers, sliceValues, colsByKey, tpl);
+  const slicedRows = useMemo(() => applySlicers(filteredRows, activeSlicers, sliceValues, colsByKey), [filteredRows, activeSlicers, sliceValues, colsByKey]);
+
+  useEffect(() => {
+    if (!slicersEdited.current && analysis.key && rows.length) setSlicersRaw(suggestSlicers(effectiveColumns(columns, tpl), rows));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analysis.key, rows]);
 
   const rdlResult = useRdlExport(
     {
-      sql, tpl, title, desc, filters, sort, exp,
+      sql, tpl, title, desc, filters, sort, exp, slicers: activeSlicers, paramLayout,
       columns: columns.map(({ key, name, type, selected, unnamed, dup }) => ({ key, name, type, selected, unnamed, dup })),
     },
-    step === REPORT
+    step === "report"
   );
+
+  /** Moves a column to just before (or after) another one, by key; the order is saved in the template by name. */
+  function moveColumn(fromKey, toKey, after = false) {
+    const names = effCols.map((c) => c.name);
+    const from = colsByKey[fromKey]?.name, to = colsByKey[toKey]?.name;
+    if (!from || !to || from === to) return;
+    names.splice(names.indexOf(from), 1);
+    names.splice(names.indexOf(to) + (after ? 1 : 0), 0, from);
+    setTpl((t) => ({ ...t, order: [...names, ...t.order.filter((n) => !names.includes(n))] }));
+  }
 
   const toggleSort = (key) =>
     setSort((s) => (s && s.key === key ? (s.dir === "asc" ? { key, dir: "desc" } : null) : { key, dir: "asc" }));
 
+  /** A fresh analysis of the query: new columns, so filters and sort start over. */
+  function applyAnalysis(res, key) {
+    setAnalysis({ columns: res.columns, table: res.table, key });
+    setFilters([]);
+    setSlicersRaw([]);
+    setSliceValues({});
+    setParamLayout({});
+    slicersEdited.current = false;
+    setSort(null);
+    if (!title && res.table) setTitle(`${prettify(res.table)} Report`);
+    setReached(at("query"));
+  }
+
   async function next() {
     setError("");
-    if (step === CONNECT) {
+    if (step === "connect") {
       if (!connection) return setError("Connect to a database to continue.");
-      return go(QUERY);
+      return go("query");
     }
-    if (step === QUERY) {
+    if (step === "query") {
       const key = `${connection.connectionId}\u0000${sql}`;
       if (key !== analysis.key) {
         setBusy(true);
         try {
           const res = await api.analyze(connection.connectionId, sql);
-          setAnalysis({ columns: res.columns, table: res.table, key });
-          setFilters([]);
-          setSort(null);
-          if (!title && res.table) setTitle(`${prettify(res.table)} report`);
-          setReached(QUERY);
+          applyAnalysis(res, key);
         } catch (e) {
           if (e.status === 410) return handleExpired(e);
           return setError(e.message);
@@ -119,28 +165,30 @@ export default function App() {
           setBusy(false);
         }
       }
-      return go(COLUMNS);
+      return go("columns");
     }
-    if (step === COLUMNS && !columns.some((c) => c.selected)) return setError("Select at least one column.");
-    if (step === DETAILS && !title.trim()) return setError("Add a report title to continue.");
-    go(step + 1);
+    if (step === "columns" && !columns.some((c) => c.selected)) return setError("Select at least one column.");
+    if (step === "details" && !title.trim()) return setError("Add a report title to continue.");
+    go(flow[at(step) + 1]);
   }
 
   const previewProps = {
-    cols: effCols, totalRows: rows.length, tpl, title, desc, colsByKey, sort, onSort: toggleSort, loading: preview.loading,
+    cols: effCols, totalRows: rows.length, moreRows: preview.truncated, tpl, title, desc, colsByKey, sort, onSort: toggleSort, onMove: moveColumn, loading: preview.loading,
   };
   const S = STEPS[step];
-  const showPreviewBar = step >= TYPES && analysis.key;
+  const nextLabel = typeof S.next === "function" ? S.next(kind) : S.next;
+  const stepNo = at(step);
+  const showPreviewBar = stepNo >= at("columns") && analysis.key;
 
   return (
     <div className="rb">
       <Orbs />
       <div className="rb-shell">
-        <StepRail step={step} reached={reached} onGo={go} sql={sql} connection={connection} />
+        <StepRail flow={flow} step={step} reached={reached} onGo={go} sql={sql} connection={connection} />
 
         <main className="rb-main">
           <div className="page-head">
-            <p className="stepno">Step {step + 1} of {STEPS.length}</p>
+            <p className="stepno">{KIND_NAMES[kind]} · Step {stepNo + 1} of {flow.length}</p>
             <h1>{S.heading}</h1>
             <p className="help">{S.help}</p>
           </div>
@@ -149,50 +197,63 @@ export default function App() {
             <div className="preview-bar no-print">
               {preview.loading ? <span className="loading">Loading rows from {connection?.database}…</span>
                 : preview.error ? <span className="error">{preview.error}</span>
-                : <span>{preview.truncated ? `Previewing the first ${preview.limit} rows. The SSRS report returns every row.` : `Previewing all ${rows.length} rows.`}</span>}
+                : <span>{preview.truncated ? `Previewing the first ${preview.limit} rows. The ${kind === "adhoc" ? "downloaded file has" : "SSRS report returns"} every row.` : `Previewing all ${rows.length} rows.`}</span>}
               <button className="btn btn-quiet btn-sm" onClick={preview.refresh} disabled={preview.loading}>Reload rows</button>
             </div>
           )}
 
-          {step === CONNECT && <ConnectStep connection={connection} onConnected={onConnected} onDisconnect={onDisconnect} />}
+          {step === "connect" && <ConnectStep connection={connection} onConnected={onConnected} onDisconnect={onDisconnect} />}
 
-          {step === QUERY && <QueryStep sql={sql} setSql={setSql} connection={connection} />}
+          {step === "query" && <QueryStep sql={sql} setSql={setSql} connection={connection} />}
 
-          {step === COLUMNS && <ColumnsStep columns={columns} setColumns={setColumns} />}
+          {step === "columns" && <ColumnsStep columns={columns} setColumns={setColumns} rows={rows} tpl={tpl} setTpl={setTpl} />}
 
-          {step === TYPES && <TypesStep columns={columns} setColumns={setColumns} rows={rows} tpl={tpl} />}
 
-          {step === TEMPLATE && (
+          {step === "template" && (
             <TemplateStep tpl={tpl} setTpl={setTpl} effCols={effCols} previewProps={{ ...previewProps, rows: sortedAll }} />
           )}
 
-          {step === DETAILS && (
+          {step === "details" && (
             <DetailsStep
               title={title} setTitle={setTitle} desc={desc} setDesc={setDesc}
               filters={filters} setFilters={setFilters} effCols={effCols} colsByKey={colsByKey} tpl={tpl}
               matchCount={filteredRows.length} totalRows={rows.length}
-              previewProps={{ ...previewProps, rows: filteredRows, filters }}
+              previewProps={{ ...previewProps, rows: slicedRows, filters, showing }}
+              slicers={activeSlicers} setSlicers={setSlicers} sliceValues={sliceValues} setSliceValues={setSliceValues} filteredRows={filteredRows}
+              paramLayout={paramLayout} setParamLayout={setParamLayout} onRename={renameSlicer}
             />
           )}
 
-          {step === REPORT && (
+          {step === "export" && (
+            <ExportStep
+              title={title} setTitle={setTitle} onExpired={handleExpired}
+              payload={{
+                connectionId: connection?.connectionId, sql, tpl, sort,
+                columns: columns.map(({ key, name, type, selected, unnamed, dup }) => ({ key, name, type, selected, unnamed, dup })),
+              }}
+              previewProps={{ ...previewProps, rows: sortedAll }}
+            />
+          )}
+
+          {step === "report" && (
             <ReportStep
               exp={exp} setExp={setExp} rdlResult={rdlResult}
-              previewProps={{ ...previewProps, rows: filteredRows, filters }}
-              onEditTemplate={() => go(TEMPLATE)} onEditFilters={() => go(DETAILS)}
+              previewProps={{ ...previewProps, rows: slicedRows, filters, showing }}
+              slicerProps={{ slicers: activeSlicers, values: sliceValues, setValues: setSliceValues, colsByKey, rows: filteredRows, tpl, layout: paramLayout, setLayout: setParamLayout, onRename: renameSlicer }}
+              onEditTemplate={() => go("template")} onEditFilters={() => go("details")}
             />
           )}
 
           <nav className="rb-nav" aria-label="Steps">
-            <div>{step > CONNECT && <button className="btn" onClick={() => go(step - 1)}>Back</button>}</div>
+            <div>{stepNo > 0 && <button className="btn" onClick={() => go(flow[stepNo - 1])}>Back</button>}</div>
             <div className="row">
               {error && <span className="error" role="alert">{error}</span>}
-              {S.next ? (
-                <button className="btn btn-primary" onClick={next} disabled={busy || (step === CONNECT && !connection)}>
-                  {busy ? "Asking SQL Server…" : S.next}
+              {nextLabel ? (
+                <button className="btn btn-primary" onClick={next} disabled={busy || (step === "connect" && !connection)}>
+                  {busy ? "Asking SQL Server…" : nextLabel}
                 </button>
               ) : (
-                <button className="btn" onClick={() => go(QUERY)}>Start a new query</button>
+                <button className="btn" onClick={() => go("query")}>Start a new query</button>
               )}
             </div>
           </nav>

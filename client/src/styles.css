@@ -47,79 +47,94 @@
 }
 
 .rb-shell {
-  display: grid;
-  grid-template-columns: 236px minmax(0, 1fr);
   min-height: 100vh
 }
 
+/* Sticky top bar: logo and the connected database. Stays at the top while scrolling. */
 .rb-rail {
-  background: rgba(10, 12, 18, .4);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border-right: 1px solid rgba(255, 255, 255, .1);
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, .04), 10px 0 40px -20px rgba(0, 0, 0, .6);
-  color: var(--ink2);
-  padding: 28px 18px;
   position: sticky;
   top: 0;
-  height: 100vh;
-  overflow: auto
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 10px clamp(16px, 4vw, 48px);
+  background: rgba(12, 14, 20, .72);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  color: var(--ink2)
 }
 
 .rb-brand {
+  flex: none;
   color: #fff;
   font-family: var(--display);
   font-weight: 600;
-  font-size: 17px;
-  letter-spacing: -0.01em
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  white-space: nowrap
 }
 
 .rb-brand .rb-logo {
-  margin-right: 10px;
+  margin-right: 9px;
   vertical-align: middle
 }
 
-.rb .rb-brand-sub {
-  font-size: 13px;
-  color: var(--ink3);
-  margin-top: 4px;
-  margin-bottom: 28px
+/* Progress bar: the seven steps in their own row below the sticky bar. Scrolls away with the page. */
+.rb-steps {
+  display: flex;
+  justify-content: safe center; /* centred, but never clipped at the left when it overflows */
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 14px clamp(16px, 4vw, 48px);
+  border-bottom: 1px solid var(--line2);
+  color: var(--ink2)
 }
 
 .steps {
   list-style: none;
   margin: 0;
   padding: 0;
-  position: relative
-}
-
-.steps::before {
-  content: '';
-  position: absolute;
-  left: 13px;
-  top: 16px;
-  bottom: 16px;
-  width: 2px;
-  background: var(--line)
+  display: flex;
+  align-items: center
 }
 
 .steps li {
-  position: relative
+  display: flex;
+  align-items: center;
+  flex: none
+}
+
+/* Line joining each step to the one before it; cyan once that step has been reached */
+.steps li+li::before {
+  content: '';
+  width: clamp(10px, 1.6vw, 28px);
+  height: 2px;
+  margin: 0 6px;
+  border-radius: 2px;
+  background: var(--line)
+}
+
+.steps li.reached+li.reached::before {
+  background: rgba(127, 211, 230, .55)
 }
 
 .step-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
-  width: 100%;
+  gap: 8px;
   background: none;
   border: none;
   color: inherit;
   font: inherit;
-  padding: 8px 6px 8px 0;
+  font-size: 13.5px;
+  padding: 4px;
   text-align: left;
+  white-space: nowrap;
   cursor: pointer;
-  border-radius: 6px
+  border-radius: 999px
 }
 
 .step-btn:disabled {
@@ -128,8 +143,8 @@
 }
 
 .step-dot {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -163,32 +178,21 @@
   color: #fff
 }
 
-.rail-query {
-  margin-top: 28px;
-  padding-top: 18px;
-  border-top: 1px solid var(--line2);
-  font-size: 12.5px
-}
-
-.rail-query p {
-  color: var(--ink3);
-  margin-bottom: 6px
-}
-
-.rail-query pre {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11.5px;
-  color: var(--ink2);
-  white-space: pre-wrap;
-  word-break: break-word;
-  margin: 0;
-  max-height: 200px;
-  overflow: hidden;
-  mask-image: linear-gradient(#000 75%, transparent)
+/* When the bar gets narrow, only the current step keeps its name; the others show just their number.
+   The names stay readable by screen readers. */
+@media (max-width:1060px) {
+  .step-btn:not(.current) .step-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap
+  }
 }
 
 .rb-main {
-  padding: 36px clamp(16px, 4vw, 48px) 0;
+  padding: 28px clamp(16px, 4vw, 48px) 0;
   min-width: 0
 }
 
@@ -242,11 +246,11 @@
    1. a soft highlight, 2. faint light bouncing back into the shadow at the lower right,
    3. the body: --light → --mid → --dark, ending in a near-black rim. Each circle only sets its three colours.
    Kept dim and still on purpose, so they sit in the background rather than pulling attention from the content.
-   To make them stronger, raise opacity (.38) and the highlight's first .28. */
+   To make them stronger, raise brightness (.42) and the highlight's first .28. */
 .rb-orb {
   position: absolute;
   border-radius: 50%;
-  opacity: .38;
+  filter: brightness(.42); /* solid but dim: overlapping balls hide each other instead of blending */
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 255, 255, .28) 0%, rgba(255, 255, 255, .08) 7%, transparent 19%),
     radial-gradient(circle at 76% 82%, color-mix(in srgb, var(--light) 30%, transparent) 0%, transparent 22%),
@@ -292,7 +296,8 @@
   height: 220px;
   top: 62%;
   left: 48%;
-  opacity: .28
+  filter: brightness(.34);
+  z-index: 1 /* in front of the cyan circle (3) where they overlap */
 }
 
 .rb-orb:nth-child(5) {
@@ -303,7 +308,7 @@
   height: 170px;
   bottom: 14%;
   left: 24%;
-  opacity: .28
+  filter: brightness(.34)
 }
 
 .rb-orb:nth-child(6) {
@@ -314,7 +319,7 @@
   height: 140px;
   top: 58%;
   right: 6%;
-  opacity: .3
+  filter: brightness(.36)
 }
 
 /* Page content sits above the circles */
@@ -363,6 +368,23 @@
 .inp::placeholder,
 .ta::placeholder {
   color: var(--ink3)
+}
+
+/* The open list of a dropdown is drawn by the browser, not by our glass styles. Without a solid colour here it
+   falls back to white behind our light text, so give the options an explicit dark background. */
+.sel option,
+.sel optgroup {
+  background-color: #1A1D27;
+  color: var(--ink)
+}
+
+.sel option:disabled {
+  color: var(--ink3)
+}
+
+.sel option:checked {
+  background-color: #2B4A5A;
+  color: #fff
 }
 
 .ta {
@@ -595,10 +617,16 @@ details.opt[open] summary {
   color: var(--accent)
 }
 
+/* Columns step: one row per column (include, name, type, why, sample values) */
+.cols-bar {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line)
+}
+
 .types-head,
 .types-row {
   display: grid;
-  grid-template-columns: minmax(140px, 1.1fr) 220px minmax(180px, 1.5fr) minmax(170px, 1.4fr);
+  grid-template-columns: 20px minmax(150px, 1fr) 275px minmax(200px, 1.1fr) minmax(170px, 1.1fr);
   gap: 14px;
   align-items: center;
   padding: 12px 16px
@@ -606,6 +634,30 @@ details.opt[open] summary {
 
 .types-row .sel {
   width: 100%
+}
+
+.types-check {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer
+}
+
+.types-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px
+}
+
+.types-pick .sel {
+  flex: 1;
+  min-width: 0
+}
+
+/* Columns left out of the report stay listed, dimmed */
+.types-row.off > :not(.types-check) {
+  opacity: .45
 }
 
 .types-head {
@@ -616,11 +668,6 @@ details.opt[open] summary {
 
 .types-row+.types-row {
   border-top: 1px solid var(--line2)
-}
-
-.types-row .why {
-  font-size: 13.5px;
-  color: var(--ink2)
 }
 
 .samples {
@@ -646,7 +693,7 @@ details.opt[open] summary {
 
 .tpl-preview {
   position: sticky;
-  top: 16px;
+  top: 72px; /* below the sticky top bar */
   min-width: 0
 }
 
@@ -722,39 +769,19 @@ details.opt[open] summary {
   font-size: 14px
 }
 
+/* Template step: column settings, one column at a time */
+.colset-pick {
+  width: 100%;
+  margin-bottom: 12px
+}
+
 .colset {
-  border-top: 1px solid var(--line2);
-  padding: 10px 0;
   display: grid;
-  gap: 8px
-}
-
-.colset:first-of-type {
-  border-top: none
-}
-
-.colset-top {
-  display: flex;
-  gap: 6px;
-  align-items: center
-}
-
-.colset-top .inp {
-  flex: 1
-}
-
-.colset-opts {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-  font-size: 13px;
-  color: var(--ink2)
-}
-
-.colset-opts .sel {
-  font-size: 13px;
-  padding: 4px 6px
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  background: var(--field)
 }
 
 .filters {
@@ -800,10 +827,8 @@ details.opt[open] summary {
 .rb-nav {
   position: sticky;
   bottom: 0;
-  /* Clear glass: invisible over empty background, frosts content that scrolls behind it. */
+  /* Fully clear: no tint and no blur, just the line on top. */
   background: transparent;
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
   border-top: 1px solid rgba(255, 255, 255, .12);
   padding: 14px 0;
   margin-top: 28px;
@@ -830,10 +855,11 @@ details.opt[open] summary {
 }
 
 .doc {
+  --doc-pad: clamp(18px, 3vw, 32px);
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: clamp(18px, 3vw, 32px);
+  padding: var(--doc-pad);
   min-width: 0
 }
 
@@ -849,6 +875,145 @@ details.opt[open] summary {
 .doc-contrast .doc-head {
   border-left: 5px solid var(--accent);
   padding-left: 14px
+}
+
+/* LoanMart style: matches the exported .rdl (colours in shared/brand.js). Inter first, then Segoe UI as in SSRS. */
+.doc-loanmart {
+  --ink: #1C2A22;
+  --ink2: #5E7166;
+  --line: #D6E4DA;
+  --line2: #D6E4DA;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif
+}
+
+/* Green header band, edge to edge across the top of the report, with a gold stripe under it */
+.doc-band {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: calc(var(--doc-pad) * -1) calc(var(--doc-pad) * -1) 18px;
+  padding: 18px var(--doc-pad);
+  background: #0F5131; /* the logo's green (BRAND.green), so the logo blends into the band */
+  position: relative;
+  overflow: hidden;
+  border-bottom: 5px solid #F5C518;
+  border-radius: 9px 9px 0 0;
+  color: #fff
+}
+
+/* "LM" line art behind the band's content */
+.doc-band-lines {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: auto;
+  aspect-ratio: 380 / 120;
+  pointer-events: none
+}
+
+.doc-band > :not(.doc-band-lines) {
+  position: relative
+}
+
+/* The logo fills the band's left end, flush with its top, bottom and left edges. The band is at least as tall as
+   the logo is wide (about square, like the exports); a taller band crops the logo a little rather than widening it. */
+.doc-band.has-logo {
+  min-height: 120px;
+  padding-left: calc(118px + 22px)
+}
+
+.doc-band > .doc-logo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 118px;
+  height: 100%;
+  object-fit: cover
+}
+
+.doc-band-main {
+  flex: 1;
+  min-width: 0
+}
+
+.doc-band .doc-org {
+  color: #DDC9B4;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: proper
+}
+
+.doc-band .doc-title {
+  color: #fff;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 2px 0
+}
+
+.doc-band .doc-title.placeholder {
+  color: rgba(255, 255, 255, .5)
+}
+
+.doc-band .doc-desc {
+  color: #CFE3D6;
+  font-size: 13.5px;
+  margin-bottom: 2px
+}
+
+.doc-band .doc-meta {
+  color: #9CC3AC;
+  font-size: 12px
+}
+
+.doc-filters {
+  margin: -4px 0 14px
+}
+
+.doc-loanmart .chips {
+  margin-top: 0
+}
+
+.doc-loanmart .chips li {
+  background: #E2EEE6;
+  color: #0F5131
+}
+
+/* The table runs edge to edge under the band, as in the exported .rdl and Excel file: no side margins, and down
+   to the bottom edge when nothing follows it */
+.doc-loanmart .rt-wrap {
+  margin: 0 calc(var(--doc-pad) * -1);
+  max-width: none;
+  border-width: 1px 0;
+  border-radius: 0
+}
+
+.doc-loanmart .rt-wrap:last-child {
+  margin-bottom: calc(var(--doc-pad) * -1);
+  border-bottom: 0;
+  border-radius: 0 0 9px 9px
+}
+
+.rt-loanmart th {
+  background: #0F5131;
+  color: #fff;
+  font-size: 12px
+}
+
+.rt-loanmart td {
+  color: #1C2A22;
+  border-bottom-color: #D6E4DA
+}
+
+.rt-loanmart.rt-zebra tbody tr:nth-child(even) td {
+  background: #EEF5F0
+}
+
+.rt.rt-loanmart tfoot td {
+  background: #E2EEE6;
+  border-top-color: #0F5131;
+  color: #0F5131
 }
 
 .doc-org {
@@ -878,9 +1043,15 @@ details.opt[open] summary {
 .doc-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 20px;
+  gap: 4px 0;
   color: var(--ink3);
   font-size: 13px
+}
+
+/* "Generated …  ·  5 columns  ·  1,234 rows": a dot between the pieces */
+.doc-meta > span + span::before {
+  content: "\00B7"; /* · written as an escape, so it shows whatever encoding the stylesheet is read in */
+  margin: 0 8px
 }
 
 .chips {
@@ -926,7 +1097,7 @@ details.opt[open] summary {
 .rt {
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 14px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums
 }
 
@@ -1044,6 +1215,27 @@ details.opt[open] summary {
   background: #EEF2FE
 }
 
+/* Dragging column headings to reorder them: the dragged heading fades, a bar marks where it will land */
+.rt th[draggable="true"] {
+  cursor: grab
+}
+
+.rt th.drag-src {
+  opacity: .45
+}
+
+.rt th.drop-before {
+  box-shadow: inset 3px 0 0 var(--drop, #2D4FD6)
+}
+
+.rt th.drop-after {
+  box-shadow: inset -3px 0 0 var(--drop, #2D4FD6)
+}
+
+.rt-loanmart {
+  --drop: #F5C518
+}
+
 .rt-sort {
   background: none;
   border: none;
@@ -1115,6 +1307,23 @@ details.opt[open] summary {
   margin-top: 10px
 }
 
+/* Ad hoc export: file name, format and style on one row; wraps only on narrow screens */
+.export-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px 20px;
+  margin-top: 16px
+}
+
+.export-row .fld:first-child {
+  flex: 1 1 260px
+}
+
+.export-row .fld {
+  flex: 0 0 auto
+}
+
 .warn-list {
   margin: 14px 0 0;
   padding: 10px 14px 10px 30px;
@@ -1156,38 +1365,8 @@ details.opt[open] summary {
 }
 
 @media (max-width:860px) {
-  .rb-shell {
-    grid-template-columns: 1fr
-  }
-
-  .rb-rail {
-    position: static;
-    height: auto;
-    padding: 16px
-  }
-
-  .rb-brand-sub,
-  .rail-query {
-    display: none
-  }
-
-  .steps {
-    display: flex;
-    gap: 4px;
-    overflow-x: auto
-  }
-
-  .steps::before {
-    display: none
-  }
-
-  .step-btn {
-    padding: 4px 8px 4px 0
-  }
-
-  .step-label {
-    white-space: nowrap;
-    font-size: 13px
+  .rb .rail-conn {
+    max-width: 55vw
   }
 
   .types-head {
@@ -1195,7 +1374,11 @@ details.opt[open] summary {
   }
 
   .types-row {
-    grid-template-columns: 1fr
+    grid-template-columns: 20px 1fr
+  }
+
+  .types-row > :nth-child(n+3) {
+    grid-column: 2
   }
 }
 
@@ -1207,6 +1390,7 @@ details.opt[open] summary {
   }
 
   .rb-rail,
+  .rb-steps,
   .rb-nav,
   .no-print,
   .page-head {
@@ -1273,16 +1457,130 @@ details.opt[open] summary {
   gap: 12px 16px
 }
 
-.rail-conn {
-  color: var(--ink) !important;
-  font-size: 13px;
-  line-height: 1.4;
-  margin: 0 !important
+/* Saved connections: one glass card per connection at the top of the Connect form */
+.saved {
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--glass-line)
 }
 
-.rail-conn span {
+.saved-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px
+}
+
+.saved-list li {
+  position: relative;
+  display: flex;
+  border: 1px solid var(--field-line);
+  border-radius: 12px;
+  background: var(--field);
+  transition: border-color .15s, background .15s
+}
+
+.saved-list li:hover {
+  border-color: rgba(127, 211, 230, .45);
+  background: rgba(127, 211, 230, .06)
+}
+
+.saved-list li.on {
+  border-color: var(--accent);
+  background: var(--accent-soft)
+}
+
+.saved-item {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: 10px 4px 10px 14px;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  border-radius: 12px
+}
+
+.saved-item:disabled {
+  cursor: default;
+  opacity: .6
+}
+
+.saved-name {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.saved-meta {
+  font-size: 12px;
   color: var(--ink3);
-  font-size: 12px
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.saved-del {
+  flex: none;
+  width: 32px;
+  border: none;
+  background: none;
+  color: var(--ink3);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 0 12px 12px 0
+}
+
+.saved-del:hover {
+  color: var(--danger)
+}
+
+.save-name {
+  width: 240px
+}
+
+/* Connected-database chip at the right of the top bar */
+.rb .rail-conn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 280px;
+  padding: 6px 12px;
+  border: 1px solid var(--field-line);
+  border-radius: 999px;
+  background: var(--field);
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap
+}
+
+.rail-conn strong {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+.rail-conn span:not(.conn-dot) {
+  color: var(--ink3);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+.rail-conn .conn-dot {
+  width: 8px;
+  height: 8px;
+  box-shadow: 0 0 0 3px var(--accent-soft)
 }
 
 .rb-brand a {
@@ -1306,4 +1604,373 @@ body {
   margin-bottom: 12px;
   font-size: 13.5px;
   color: var(--ink2)
+}
+/* Filters for readers: the parameter bar SSRS shows above the report, mirrored over the preview.
+   A grid of parameter cells (SSRS's parameter layout); filters are dragged between cells by their handle. */
+.slicer-bar {
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  background: var(--surface);
+  border: 1px solid var(--glass-line);
+  border-radius: 14px;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur)
+}
+
+.slicer-grid {
+  display: grid;
+  gap: 10px 14px
+}
+
+.slicer-cell {
+  min-width: 0;
+  min-height: 62px;
+  border-radius: 8px;
+  border: 1px dashed transparent;
+  transition: background .12s, border-color .12s
+}
+
+/* Empty cells show as faint outlines, and stand out while a filter is being dragged */
+.slicer-cell.empty {
+  border-color: rgba(120, 140, 130, .28)
+}
+
+.slicer-bar.is-dragging .slicer-cell {
+  border-color: rgba(120, 140, 130, .45)
+}
+
+.slicer-cell.over {
+  border-color: var(--accent) !important;
+  background: rgba(15, 82, 50, .06)
+}
+
+.slicer-cell.dragging {
+  opacity: .4
+}
+
+.slicer {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0
+}
+
+.slicer-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+.slicer .inp,
+.slicer .sel {
+  width: 100%
+}
+
+/* Drag handle: six dots before the label */
+.slicer-grip {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 18px;
+  margin-left: -3px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink3);
+  cursor: grab
+}
+
+.slicer-grip svg {
+  fill: currentColor
+}
+
+.slicer-grip:hover,
+.slicer-grip:focus-visible {
+  color: var(--ink);
+  background: rgba(120, 140, 130, .16)
+}
+
+.slicer-grip:focus-visible {
+  outline: 2px solid var(--accent)
+}
+
+.slicer-grip:active {
+  cursor: grabbing
+}
+
+.slicer-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--ink3)
+}
+
+.slicer-tip {
+  margin-right: auto
+}
+
+.grid-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px
+}
+
+.grid-step-label {
+  color: var(--ink2);
+  font-weight: 600
+}
+
+.grid-step-value {
+  min-width: 14px;
+  text-align: center;
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums
+}
+
+.grid-step-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid #CBD3DF;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer
+}
+
+.grid-step-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent)
+}
+
+.grid-step-btn:disabled {
+  opacity: .4;
+  cursor: default
+}
+
+.slicer-col {
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 140px
+}
+
+/* Pick list: a dropdown of checkboxes, like SSRS's multi-value parameters. */
+.pick {
+  position: relative
+}
+
+.pick summary {
+  list-style: none;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 26px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink2) 50%), linear-gradient(135deg, var(--ink2) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat
+}
+
+.pick summary::-webkit-details-marker {
+  display: none
+}
+
+.pick-pop {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 100%;
+  max-width: 320px;
+  max-height: 280px;
+  overflow: auto;
+  padding: 6px;
+  background: #1A1D27;
+  border: 1px solid var(--field-line);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .45)
+}
+
+.pick-pop label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  white-space: nowrap;
+  cursor: pointer
+}
+
+.pick-pop label:hover {
+  background: rgba(255, 255, 255, .06)
+}
+
+.pick-pop .pick-all {
+  font-weight: 600;
+  border-bottom: 1px solid var(--line);
+  border-radius: 6px 6px 0 0;
+  margin-bottom: 4px
+}
+
+.pick-pop input {
+  accent-color: var(--accent)
+}
+
+/* The readers' current choices under the header, as SSRS prints them. */
+.doc-showing {
+  font-size: 12.5px;
+  color: #4A566E;
+  margin: -6px 0 12px !important
+}
+
+.doc-loanmart .doc-showing {
+  color: #1C2A22;
+  margin: 2px 0 12px !important
+}
+
+/* Filters for readers inside the report: a light strip across the top of the page, like SSRS's parameter bar,
+   in the report's own colours so the filters and the report read as one document. */
+.doc .slicer-bar {
+  margin: calc(var(--doc-pad) * -1) calc(var(--doc-pad) * -1) var(--doc-pad);
+  padding: 14px var(--doc-pad);
+  background: #F5F7FA;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 9px 9px 0 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none
+}
+
+.doc-loanmart .slicer-bar {
+  --accent: #0F5131;
+  background: #F1F6F2
+}
+
+/* The green band then sits straight under the filters, square-cornered */
+.doc.has-filterbar .doc-band {
+  border-radius: 0
+}
+
+.doc .slicer-label {
+  color: var(--ink2)
+}
+
+.doc .slicer-bar .inp,
+.doc .slicer-bar .sel {
+  background-color: #fff;
+  border-color: #CBD3DF;
+  color: var(--ink);
+  color-scheme: light;
+  backdrop-filter: none
+}
+
+.doc-loanmart .slicer-bar .inp,
+.doc-loanmart .slicer-bar .sel {
+  border-color: #C2D6C8
+}
+
+.doc .slicer-bar .inp:focus,
+.doc .slicer-bar .sel:focus,
+.doc .pick summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent)
+}
+
+.doc .slicer-bar .sel option {
+  background-color: #fff;
+  color: var(--ink)
+}
+
+.doc .pick-pop {
+  background: #fff;
+  border-color: var(--line);
+  box-shadow: 0 12px 28px rgba(16, 24, 40, .16)
+}
+
+.doc .pick-pop label:hover {
+  background: #EEF3F0
+}
+
+.doc .slicer-reset {
+  color: var(--accent);
+  font-weight: 600
+}
+
+.doc .slicer-reset:disabled {
+  color: var(--ink3)
+}
+
+/* Filter names: click to rename. A pencil shows on hover. */
+.slicer-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 1px 4px;
+  margin-left: -2px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: text
+}
+
+.slicer-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.slicer-name-pen {
+  flex: none;
+  opacity: 0;
+  transition: opacity .12s
+}
+
+.slicer-name:hover,
+.slicer-name:focus-visible {
+  background: rgba(120, 140, 130, .14);
+  color: var(--ink)
+}
+
+.slicer-name:hover .slicer-name-pen,
+.slicer-name:focus-visible .slicer-name-pen {
+  opacity: .8
+}
+
+.slicer-name:focus-visible {
+  outline: 2px solid var(--accent)
+}
+
+.slicer-rename {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 1px 5px;
+  outline: none
 }

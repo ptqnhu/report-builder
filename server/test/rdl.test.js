@@ -11,8 +11,8 @@ const columns = await describeQuery(fakePool({ describe: [
   describeRow(4, "is_paid", "bit"), describeRow(5, "revenue", "decimal(12,2)"), describeRow(6, "discount_rate", "decimal(5,4)"),
 ] }), SQL);
 
-function build(over = {}) {
-  const tpl = { ...DEFAULT_TPL, rowNumbers: true, org: "Acme & Co", footer: "=not an expression" };
+function build(over = {}, tplOver = {}) {
+  const tpl = { ...DEFAULT_TPL, rowNumbers: true, org: "Acme & Co", footer: "=not an expression", ...tplOver };
   const effCols = effectiveColumns(columns, tpl);
   const k = (n) => effCols.find((c) => c.name === n).key;
   const filters = [
@@ -63,12 +63,61 @@ test("sort, formats and escaping", () => {
   assert.match(xml, /<Direction>Descending<\/Direction>/);
   assert.match(xml, /<Format>'\$'#,0\.00;-'\$'#,0\.00<\/Format>/);
   assert.match(xml, /<Format>0\.00%<\/Format>/);
-  assert.match(xml, /Acme &amp; Co/);
+  assert.match(xml, /Acme &amp; Co/i); // the LoanMart band shows it in capitals
   assert.match(xml, /=&quot;=not an expression&quot;/);
+});
+
+test("LoanMart style: green band with the embedded logo and gold stripe, as wide as the table", () => {
+  const xml = build();
+  assert.match(xml, /<Rectangle Name="HeaderBand">.*<BackgroundColor>#0F5131<\/BackgroundColor>/s);
+  assert.match(xml, /<Image Name="Logo"><Source>Embedded<\/Source><Value>LoanMartLogo<\/Value>/);
+  // the logo fills the band's left end: at its top-left corner and exactly as tall as the band
+  const logo = xml.match(/<Image Name="Logo">.*?<Top>0in<\/Top><Left>0in<\/Left><Height>([\d.]+)in<\/Height><Width>([\d.]+)in<\/Width>/);
+  const bandH = xml.match(/<\/ReportItems><KeepTogether>true<\/KeepTogether><Top>0in<\/Top><Left>0in<\/Left><Height>([\d.]+)in<\/Height>/)[1];
+  assert.ok(logo, "logo is flush with the band's top-left corner");
+  assert.equal(logo[1], bandH);
+  assert.match(xml, /<EmbeddedImage Name="LoanMartLogo"><MIMEType>image\/png<\/MIMEType><ImageData>iVBOR/);
+  assert.match(xml, /<Rectangle Name="GoldStripe">/);
+  assert.doesNotMatch(xml, /Summary1/); // no summary figures in the band
+  // one info line: Generated <date>  ·  6 columns  ·  <rows>
+  assert.match(xml, /<Textbox Name="ReportMeta">.*?&quot;Generated &quot; &amp; Format\(Globals!ExecutionTime, &quot;d MMM yyyy&quot;\) &amp; &quot;  ·  6 columns  ·  &quot; &amp; Format\(CountRows\(&quot;MainDataSet&quot;\), &quot;#,0&quot;\)/s);
+
+  // A table wider than the page: the band and stripe still run to its end (6 wide columns + row numbers = 16.05in)
+  const wide = build({}, { cols: Object.fromEntries(columns.map((c) => [c.name, { width: "wide" }])) });
+  assert.match(wide, /<Rectangle Name="HeaderBand">.*?<\/ReportItems><KeepTogether>true<\/KeepTogether><Top>0in<\/Top><Left>0in<\/Left><Height>[\d.]+in<\/Height><Width>16\.05in<\/Width>/s);
+  assert.match(wide, /<Rectangle Name="GoldStripe"><Top>[\d.]+in<\/Top><Left>0in<\/Left><Height>[\d.]+in<\/Height><Width>16\.05in<\/Width>/);
+
+  const plain = build({}, { logo: false });
+  assert.ok(balanced(plain));
+  assert.doesNotMatch(plain, /LoanMartLogo|<Image Name="Logo"/);
+  // the "LM" line art stays: baked into the band's background image, made at the band's size (96 px per inch)
+  assert.match(plain, /<BackgroundImage><Source>Embedded<\/Source><Value>LoanMartBand<\/Value><BackgroundRepeat>Clip<\/BackgroundRepeat><\/BackgroundImage>/);
+  const png = Buffer.from(plain.match(/<EmbeddedImage Name="LoanMartBand"><MIMEType>image\/png<\/MIMEType><ImageData>([^<]+)</)[1], "base64");
+  const band = plain.match(/<\/ReportItems><KeepTogether>true<\/KeepTogether><Top>0in<\/Top><Left>0in<\/Left><Height>([\d.]+)in<\/Height><Width>([\d.]+)in<\/Width>/);
+  assert.equal(png.readUInt32BE(16), Math.round(+band[2] * 96));
+  assert.equal(png.readUInt32BE(20), Math.round(+band[1] * 96));
+  assert.doesNotMatch(plain, /<Image Name="BandLines"/); // never an item over the text: SSRS's viewer would move it
+});
+
+test("other styles keep their own header and no logo", () => {
+  const xml = build({}, { theme: "ledger" });
+  assert.ok(balanced(xml));
+  assert.doesNotMatch(xml, /HeaderBand|EmbeddedImage/);
+  assert.match(xml, /<BackgroundColor>#18233A<\/BackgroundColor>/);
 });
 
 test("export settings and warnings", () => {
   assert.ok(validateExport({ ...DEFAULT_EXPORT }));
   assert.equal(validateExport({ ...DEFAULT_EXPORT, server: "s", database: "d" }), "");
   assert.equal(exportWarnings([{ name: "Column3", unnamed: true }])[0].startsWith("Column 3 has no name"), true);
+});
+
+test("display options reach the .rdl: formats, yes/no labels and text case", () => {
+  const tpl = { ...DEFAULT_TPL, cols: { revenue: { display: "k" }, is_paid: { display: "yn" }, status: { display: "upper" } } };
+  const effCols = effectiveColumns(columns, tpl);
+  const xml = buildRdl({ sql: SQL, columns, effCols, tpl, title: "Orders", desc: "", filters: [], colsByKey: keyBy(effCols), sort: null,
+    exp: { ...DEFAULT_EXPORT, server: "s", database: "d" } });
+  assert.match(xml, /<Value>=Fields!revenue\.Value<\/Value><Style>.*?<Format>'\$'#,0,\.0&quot;K&quot;;-'\$'#,0,\.0&quot;K&quot;<\/Format>/);
+  assert.match(xml, /IIF\(CBool\(Fields!is_paid\.Value\), &quot;Y&quot;, &quot;N&quot;\)/);
+  assert.match(xml, /<Value>=UCase\(Fields!status\.Value\)<\/Value>/);
 });

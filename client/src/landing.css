@@ -76,12 +76,28 @@
   padding-bottom: 72px
 }
 
+/* Top bar: stays at the top while scrolling, frosted like the builder's top bar so the page reads cleanly under it */
+.lp-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(12, 14, 20, .72);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid rgba(255, 255, 255, .08)
+}
+
 .lp-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 22px;
-  padding-bottom: 22px
+  padding-top: 14px;
+  padding-bottom: 14px
+}
+
+/* Section links scroll to just below the bar, not under it */
+.lp-page section[id] {
+  scroll-margin-top: 84px
 }
 
 .lp-brand {
@@ -135,6 +151,12 @@
   max-width: 56ch;
   font-size: 16.5px;
   color: var(--ink2)
+}
+
+.lp-start {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px
 }
 
 .lp-actions {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Segmented from "../components/Segmented.jsx";
 import { api } from "../api.js";
 
@@ -26,6 +26,27 @@ function saveLastLocal(server, database) {
   try { localStorage.setItem(LAST_LOCAL_KEY, JSON.stringify({ server, database })); } catch { /* storage unavailable */ }
 }
 
+/**
+ * Saved connections, kept in this browser: name, server, database, sign-in method, login name and options.
+ * Never the password.
+ */
+const SAVED_KEY = "report-builder.savedConnections";
+function loadSaved() {
+  try { return JSON.parse(localStorage.getItem(SAVED_KEY)) || []; } catch { return []; }
+}
+function storeSaved(list) {
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify(list)); } catch { /* storage unavailable */ }
+}
+/** The parts of the form worth saving. The password is left out on purpose. */
+const savable = (f) => ({
+  server: f.server.trim(), database: f.database.trim(), authType: f.authType,
+  user: f.authType === "local" ? "" : f.user.trim(), encrypt: f.encrypt, trustServerCertificate: f.trustServerCertificate,
+});
+const sameConn = (a, b) =>
+  sameName(a.server, b.server) && sameName(a.database, b.database) && a.authType === b.authType && sameName(a.user, b.user);
+const AUTH_LABELS = { local: "This computer", sql: "SQL login", windows: "Windows account" };
+const defaultName = (f) => (f.database.trim() ? `${f.database.trim()} on ${f.server.trim()}` : f.server.trim());
+
 const EMPTY = { server: "localhost", database: "", authType: "sql", user: "", password: "", encrypt: true, trustServerCertificate: true };
 
 export default function ConnectStep({ connection, onConnected, onDisconnect }) {
@@ -33,6 +54,10 @@ export default function ConnectStep({ connection, onConnected, onDisconnect }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [recent] = useState(loadRecent);
+  const [saved, setSaved] = useState(loadSaved);
+  const [remember, setRemember] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const passwordRef = useRef(null);
   const [local, setLocal] = useState(null); // [{ server, running }] once loaded
   const [typing, setTyping] = useState(false);
   const [dbTyping, setDbTyping] = useState(false);
@@ -100,10 +125,33 @@ export default function ConnectStep({ connection, onConnected, onDisconnect }) {
 
   function connect(e) {
     e.preventDefault();
-    openConnection(form);
+    openConnection(form, { save: remember });
   }
 
-  async function openConnection(details) {
+  /** Fill the form from a saved connection. "This computer" ones connect straight away; others wait for the password. */
+  function applySaved(c) {
+    autoConnectTried = true; // the saved choice wins over reopening last time's database
+    setTyping(!serverOptions.some((o) => sameName(o.value, c.server)));
+    setDbTyping(false);
+    setRemember(false);
+    const details = { ...EMPTY, ...c, password: "" };
+    setForm(details);
+    setError("");
+    if (c.authType === "local") {
+      if (runningLocal(c.server)) openConnection(details);
+      else setError(`${c.server} isn't running on this computer. Start it, or pick another connection.`);
+    } else {
+      setTimeout(() => passwordRef.current?.focus(), 0);
+    }
+  }
+
+  function removeSaved(c) {
+    const list = saved.filter((s) => s !== c);
+    setSaved(list);
+    storeSaved(list);
+  }
+
+  async function openConnection(details, { save = false } = {}) {
     setBusy(true);
     setError("");
     try {
@@ -111,6 +159,15 @@ export default function ConnectStep({ connection, onConnected, onDisconnect }) {
       setForm((f) => ({ ...f, password: "" })); // don't keep the password in the browser
       saveRecent(details.server.trim());
       if (details.authType === "local") saveLastLocal(details.server.trim(), details.database);
+      // Save only once the connection works, so a typo never gets saved. Same name or same connection is replaced.
+      if (save) {
+        const entry = { name: saveName.trim() || defaultName(details), ...savable(details) };
+        const list = [entry, ...saved.filter((s) => !sameName(s.name, entry.name) && !sameConn(s, entry))];
+        setSaved(list);
+        storeSaved(list);
+        setRemember(false);
+        setSaveName("");
+      }
       onConnected(conn);
     } catch (err) {
       setError(err.message);
@@ -137,8 +194,27 @@ export default function ConnectStep({ connection, onConnected, onDisconnect }) {
 
   const windows = form.authType === "windows";
   const showDbList = found.list?.length > 0 && !dbTyping;
+  const savedMatch = saved.find((s) => sameConn(s, savable(form)));
   return (
     <form className="panel connect-form" onSubmit={connect}>
+      {saved.length > 0 && (
+        <div className="saved">
+          <span className="fld-label">Saved connections</span>
+          <ul className="saved-list">
+            {saved.map((c) => (
+              <li key={c.name} className={savedMatch === c ? "on" : ""}>
+                <button type="button" className="saved-item" onClick={() => applySaved(c)} disabled={busy}
+                  title={c.authType === "local" ? "Connect now" : "Fill in this connection, then enter the password"}>
+                  <span className="saved-name">{c.name}</span>
+                  <span className="saved-meta">{[c.database, c.server, AUTH_LABELS[c.authType]].filter(Boolean).join(" · ")}</span>
+                </button>
+                <button type="button" className="saved-del" onClick={() => removeSaved(c)} aria-label={`Remove saved connection ${c.name}`} title="Remove">×</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="connect-grid">
         <div className="fld">
           <label className="fld-label" htmlFor="conn-server">Server</label>
@@ -167,7 +243,7 @@ export default function ConnectStep({ connection, onConnected, onDisconnect }) {
         </label>
         <label className="fld">
           <span className="fld-label">Password</span>
-          <input className="inp" type="password" value={form.password} onChange={(e) => set({ password: e.target.value })}
+          <input ref={passwordRef} className="inp" type="password" value={form.password} onChange={(e) => set({ password: e.target.value })}
             onBlur={() => { if (!found.list) findDatabases(); }} autoComplete="current-password" />
         </label>
       </div>}
@@ -204,8 +280,24 @@ export default function ConnectStep({ connection, onConnected, onDisconnect }) {
 
       <div className="export-actions">
         <button className="btn btn-primary" type="submit" disabled={busy}>{busy ? "Connecting…" : "Connect"}</button>
+        {savedMatch ? (
+          <span className="fld-hint" style={{ marginTop: 0 }}>Saved as <strong>{savedMatch.name}</strong></span>
+        ) : (
+          <>
+            <label className="check"><input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />Save this connection</label>
+            {remember && (
+              <input className="inp save-name" value={saveName} onChange={(e) => setSaveName(e.target.value)}
+                placeholder={defaultName(form) || "Connection name"} aria-label="Name for the saved connection" />
+            )}
+          </>
+        )}
         {error && <span className="error" role="alert">{error}</span>}
       </div>
+      {remember && !savedMatch && (
+        <p className="fld-hint" style={{ marginTop: 6 }}>
+          Saved in this browser once the connection works: server, database, sign-in method, login name and options. Never the password.
+        </p>
+      )}
       <p className="fld-hint" style={{ marginTop: 10 }}>
         Your password is only used to open the connection on the app's server. It isn't stored and is never written into the report.
         For safety, use a login that can only read data, such as a member of db_datareader. The app also blocks anything other than SELECT queries.

@@ -21,6 +21,7 @@ export function fmtDate(d, f) {
     case "YYYY-MM-DD": return `${y}-${pad(m)}-${pad(day)}`;
     case "MM/DD/YYYY": return `${pad(m)}/${pad(day)}/${y}`;
     case "DD/MM/YYYY": return `${pad(day)}/${pad(m)}/${y}`;
+    case "MMM YYYY": return `${MON[m - 1]} ${y}`;
     default: return `${day} ${MON[m - 1]} ${y}`;
   }
 }

@@ -9,6 +9,10 @@ export default function TemplateStep({ tpl, setTpl, effCols, previewProps }) {
   const { templates, message, setMessage, save, remove } = useTemplates();
   const [chosen, setChosen] = useState("");
   const [saveName, setSaveName] = useState(tpl.name || "");
+  // Column settings show one column at a time, picked from a dropdown
+  const [editKey, setEditKey] = useState(null);
+  const editIdx = Math.max(0, effCols.findIndex((c) => c.key === editKey));
+  const ec = effCols[editIdx];
 
   const patch = (p) => setTpl((t) => ({ ...t, ...p }));
   const patchCol = (name, p) => setTpl((t) => ({ ...t, cols: { ...t.cols, [name]: { ...(t.cols[name] || {}), ...p } } }));
@@ -82,9 +86,13 @@ export default function TemplateStep({ tpl, setTpl, effCols, previewProps }) {
         <div className="group">
           <h3>Look</h3>
           <div className="kv">
-            <span>Style</span>
-            <Segmented label="Style" value={tpl.theme} onChange={(v) => patch({ theme: v })}
-              options={[["ledger", "Ledger"], ["clean", "Clean"], ["contrast", "Contrast"]]} />
+            <label htmlFor="theme">Style</label>
+            <select id="theme" className="sel" value={tpl.theme} onChange={(e) => patch({ theme: e.target.value })}>
+              <option value="loanmart">LoanMart</option>
+              <option value="ledger">Ledger</option>
+              <option value="clean">Clean</option>
+              <option value="contrast">Contrast</option>
+            </select>
             <span>Row height</span>
             <Segmented label="Row height" value={tpl.density} onChange={(v) => patch({ density: v })}
               options={[["compact", "Compact"], ["normal", "Normal"], ["comfortable", "Roomy"]]} />
@@ -93,6 +101,11 @@ export default function TemplateStep({ tpl, setTpl, effCols, previewProps }) {
             <label className="check"><input type="checkbox" checked={tpl.zebra} onChange={(e) => patch({ zebra: e.target.checked })} />Shade alternate rows</label>
             <label className="check"><input type="checkbox" checked={tpl.rowNumbers} onChange={(e) => patch({ rowNumbers: e.target.checked })} />Show row numbers</label>
             <label className="check"><input type="checkbox" checked={tpl.totals} onChange={(e) => patch({ totals: e.target.checked })} />Show a totals row for number columns</label>
+            {tpl.theme === "loanmart" && (
+              <>
+                <label className="check"><input type="checkbox" checked={tpl.logo} onChange={(e) => patch({ logo: e.target.checked })} />Show the LoanMart logo</label>
+              </>
+            )}
           </div>
         </div>
 
@@ -124,25 +137,35 @@ export default function TemplateStep({ tpl, setTpl, effCols, previewProps }) {
 
         <div className="group">
           <h3>Columns ({effCols.length})</h3>
-          {effCols.map((c, i) => (
-            <div className="colset" key={c.key}>
-              <div className="colset-top">
-                <input className="inp" value={c.label} onChange={(e) => patchCol(c.name, { label: e.target.value })} aria-label={`Heading for ${c.name}`} />
-                <button className="icon-btn" onClick={() => move(c.name, -1)} disabled={i === 0} aria-label={`Move ${c.label} left`}>↑</button>
-                <button className="icon-btn" onClick={() => move(c.name, 1)} disabled={i === effCols.length - 1} aria-label={`Move ${c.label} right`}>↓</button>
+          {ec && (
+            <>
+              <select className="sel colset-pick" value={ec.key} onChange={(e) => setEditKey(e.target.value)} aria-label="Column to edit">
+                {effCols.map((c, i) => <option key={c.key} value={c.key}>{i + 1}. {c.label}</option>)}
+              </select>
+              <div className="colset">
+                <div className="kv">
+                  <label htmlFor="col-head">Heading</label>
+                  <input id="col-head" className="inp" value={ec.label} onChange={(e) => patchCol(ec.name, { label: e.target.value })} />
+                  <span>Type</span>
+                  <span><TypeBadge type={ec.type} showType /></span>
+                  <label htmlFor="col-align">Align</label>
+                  <select id="col-align" className="sel" value={ec.align} onChange={(e) => patchCol(ec.name, { align: e.target.value })}>
+                    <option value="auto">Auto</option><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
+                  </select>
+                  <label htmlFor="col-width">Width</label>
+                  <select id="col-width" className="sel" value={ec.width} onChange={(e) => patchCol(ec.name, { width: e.target.value })}>
+                    <option value="auto">Auto</option><option value="narrow">Narrow</option><option value="medium">Medium</option><option value="wide">Wide</option>
+                  </select>
+                  <span>Position</span>
+                  <span className="row" style={{ gap: 6, flexWrap: "nowrap" }}>
+                    <button className="btn btn-sm" onClick={() => move(ec.name, -1)} disabled={editIdx === 0} aria-label="Move column left">← Left</button>
+                    <button className="btn btn-sm" onClick={() => move(ec.name, 1)} disabled={editIdx === effCols.length - 1} aria-label="Move column right">Right →</button>
+                  </span>
+                </div>
+                <label className="check"><input type="checkbox" checked={ec.wrap} onChange={(e) => patchCol(ec.name, { wrap: e.target.checked })} />Wrap long text</label>
               </div>
-              <div className="colset-opts">
-                <TypeBadge type={c.type} showType />
-                <select className="sel" value={c.align} onChange={(e) => patchCol(c.name, { align: e.target.value })} aria-label={`Alignment for ${c.label}`}>
-                  <option value="auto">Auto align</option><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
-                </select>
-                <select className="sel" value={c.width} onChange={(e) => patchCol(c.name, { width: e.target.value })} aria-label={`Width for ${c.label}`}>
-                  <option value="auto">Auto width</option><option value="narrow">Narrow</option><option value="medium">Medium</option><option value="wide">Wide</option>
-                </select>
-                <label className="check"><input type="checkbox" checked={c.wrap} onChange={(e) => patchCol(c.name, { wrap: e.target.checked })} />Wrap</label>
-              </div>
-            </div>
-          ))}
+            </>
+          )}
         </div>
       </div>
 

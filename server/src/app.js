@@ -7,6 +7,7 @@ import connectionRoutes from "./routes/connections.js";
 import queryRoutes from "./routes/query.js";
 import templateRoutes from "./routes/templates.js";
 import rdlRoutes from "./routes/rdl.js";
+import exportRoutes from "./routes/export.js";
 import { errorHandler, notFound } from "./lib/errors.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -24,6 +25,7 @@ export function createApp({ connections }) {
   app.use("/api", queryRoutes(connections));
   app.use("/api", templateRoutes);
   app.use("/api", rdlRoutes);
+  app.use("/api", exportRoutes(connections));
   app.use("/api", notFound);
 
   // In production, serve the built client from the same origin.

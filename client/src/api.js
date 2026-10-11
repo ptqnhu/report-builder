@@ -18,6 +18,27 @@ async function request(path, { method = "GET", body, keepalive } = {}) {
   return data;
 }
 
+/** POST /api/export: the whole query as a CSV or Excel file. Returns { blob, fileName, rows, truncated }. */
+async function exportFile(body) {
+  let res;
+  try {
+    res = await fetch("/api/export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  } catch {
+    throw Object.assign(new Error("Can't reach the app's server. Check that it's running."), { status: 0 });
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw Object.assign(new Error(data.error || `Export failed (${res.status}).`), { status: res.status });
+  }
+  const name = (res.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/);
+  return {
+    blob: await res.blob(),
+    fileName: name ? name[1] : `report.${body.format}`,
+    rows: Number(res.headers.get("X-Export-Rows")) || 0,
+    truncated: res.headers.get("X-Export-Truncated") === "1",
+  };
+}
+
 export const api = {
   localServers: () => request("/local-servers"),
   listDatabases: (details) => request("/databases", { method: "POST", body: details }),
@@ -26,6 +47,7 @@ export const api = {
   analyze: (connectionId, sql) => request("/analyze", { method: "POST", body: { connectionId, sql } }),
   preview: (connectionId, sql) => request("/preview", { method: "POST", body: { connectionId, sql } }),
   rdl: (payload) => request("/rdl", { method: "POST", body: payload }),
+  exportFile,
   listTemplates: () => request("/templates"),
   saveTemplate: (tpl) => request(`/templates/${encodeURIComponent(tpl.name)}`, { method: "PUT", body: tpl }),
   deleteTemplate: (name) => request(`/templates/${encodeURIComponent(name)}`, { method: "DELETE" }),

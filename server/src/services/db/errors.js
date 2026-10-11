@@ -1,7 +1,10 @@
-/** Pulls SQL Server's own message out of an mssql error. */
+/**
+ * Pulls SQL Server's own message out of an mssql error. The ODBC driver used for "This computer" sign-in
+ * prefixes messages with "[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]", which is dropped.
+ */
 export function sqlErrorMessage(e) {
   const m = e?.originalError?.info?.message || e?.precedingErrors?.[0]?.message || e?.message || String(e);
-  return `SQL Server says: ${m}`;
+  return `SQL Server says: ${String(m).replace(/^(\[[^\]]*\])+\s*/, "")}`;
 }
 
 /** Turns connection failures into advice the user can act on. Never includes credentials. */

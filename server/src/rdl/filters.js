@@ -9,10 +9,11 @@ const RDL_OPS = {
 /**
  * Turns the app's filters into RDL dataset filters.
  * mode "params": filters that take a value become report parameters (with the user's value as default).
+ * used: parameter names already taken (shared with the readers' slicers).
  * Returns { filters: [{expr, op, values}], params: [{name, dataType, def, prompt}], summary: [text] }.
  */
-export function buildFilters(filters, colsByKey, fieldOf, mode, tpl) {
-  const out = [], params = [], summary = [], used = new Set();
+export function buildFilters(filters, colsByKey, fieldOf, mode, tpl, used = new Set()) {
+  const out = [], params = [], summary = [];
 
   filters.forEach((f) => {
     const c = colsByKey[f.col];

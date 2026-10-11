@@ -15,16 +15,18 @@ export const NO_VALUE_OPS = new Set(["empty", "notempty", "true", "false"]);
 
 export const DATE_FORMATS = ["D MMM YYYY", "YYYY-MM-DD", "MM/DD/YYYY", "DD/MM/YYYY"];
 
+/** New reports start in the LoanMart style: green header band with the logo, across the full width of the report. */
 export const DEFAULT_TPL = {
   name: "",
-  theme: "ledger",
+  theme: "loanmart",
   density: "normal",
   zebra: true,
   rowNumbers: false,
   totals: true,
   layout: "expand",
   stickyFirst: true,
-  org: "",
+  org: "", // shown above the title when set (Template step: Organisation)
+  logo: true, // LoanMart style: show the logo in the header band
   footer: "",
   currency: "$",
   decimals: 2,

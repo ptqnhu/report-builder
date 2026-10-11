@@ -2,7 +2,7 @@ import { useState } from "react";
 import Segmented from "./Segmented.jsx";
 import { downloadText } from "../utils/download.js";
 
-export default function ExportPanel({ exp, onChange, result }) {
+export default function ExportPanel({ exp, onChange, result, slicerLabels = [] }) {
   const [msg, setMsg] = useState("");
   const set = (p) => { onChange(p); setMsg(""); };
   const ready = !!result.rdl && !result.loading;
@@ -61,7 +61,13 @@ export default function ExportPanel({ exp, onChange, result }) {
         </div>
 
         <div>
-          <span className="fld-label">Filters in SSRS</span>
+          <span className="fld-label">Filters for readers</span>
+          <p className="fld-hint" style={{ marginTop: 0, marginBottom: 12 }}>
+            {slicerLabels.length
+              ? `Readers can slice the report by ${slicerLabels.join(", ")}. Each starts on All or its default.`
+              : "None. Add some under Title & filters so readers can slice the report."}
+          </p>
+          <span className="fld-label">Your filters in SSRS</span>
           <label className="radio">
             <input type="radio" name="fmode" checked={exp.filterMode === "fixed"} onChange={() => set({ filterMode: "fixed" })} />
             <span>Fixed<br /><span className="muted">The report always uses the values you set.</span></span>

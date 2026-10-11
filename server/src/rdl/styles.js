@@ -1,15 +1,20 @@
-import { idLike } from "@report-builder/shared";
+import { BRAND, NUMERIC, numberSpec, dateSpec } from "@report-builder/shared";
 
 export const NET_TYPE = {
   Text: "System.String", Integer: "System.Int32", Decimal: "System.Decimal", Currency: "System.Decimal",
   Percentage: "System.Decimal", Date: "System.DateTime", DateTime: "System.DateTime", Boolean: "System.Boolean",
 };
-export const NET_DATE = { "D MMM YYYY": "d MMM yyyy", "YYYY-MM-DD": "yyyy-MM-dd", "MM/DD/YYYY": "MM'/'dd'/'yyyy", "DD/MM/YYYY": "dd'/'MM'/'yyyy" };
+export const NET_DATE = { "D MMM YYYY": "d MMM yyyy", "YYYY-MM-DD": "yyyy-MM-dd", "MM/DD/YYYY": "MM'/'dd'/'yyyy", "DD/MM/YYYY": "dd'/'MM'/'yyyy", "MMM YYYY": "MMM yyyy" };
 
+/** Table colours per style. rowLine, totalBg and totalLine fall back to the ledger values when left out. */
 export const THEME_RDL = {
-  ledger: { headBg: "#18233A", headColor: "White", zebra: "#F3F5F9", headBorder: null },
+  ledger: { headBg: "#18233A", headColor: "White", zebra: "#F3F5F9", headBorder: null, rowLine: "#E6EAF0", totalBg: "#EEF1F6", totalLine: "#18233A" },
   clean: { headBg: null, headColor: "#18233A", zebra: "#F7F8FA", headBorder: "#18233A" },
   contrast: { headBg: "#2D4FD6", headColor: "White", zebra: "#EEF2FE", headBorder: null },
+  loanmart: {
+    headBg: BRAND.green, headColor: "White", zebra: BRAND.greenTint, headBorder: null,
+    rowLine: BRAND.greenLine, totalBg: "#E2EEE6", totalLine: BRAND.green, ink: BRAND.ink, band: true,
+  },
 };
 export const DENSITY_RDL = {
   compact: { pad: 2, size: 9, h: 0.22 },
@@ -17,23 +22,25 @@ export const DENSITY_RDL = {
   comfortable: { pad: 7, size: 10, h: 0.36 },
 };
 
-/** .NET format string matching the app's display format for a column. */
+/**
+ * .NET format string matching the app's display of a column (shared/display.js). Numbers: "#,0.00", "'$'#,0.00;('$'#,0.00)";
+ * thousands and millions use .NET's scaling commas just left of the decimal point: "#,0,.0K" = 1234 -> 1.2K.
+ */
 export function netFormat(c, tpl) {
-  const d = Number(tpl.decimals);
-  const frac = d > 0 ? "." + "0".repeat(d) : "";
-  switch (c.type) {
-    case "Integer": return idLike(c.name) ? "0" : "#,0";
-    case "Decimal": return "#,0" + frac;
-    case "Currency": {
-      const sym = (tpl.currency || "").replace(/'/g, "");
-      const q = sym ? `'${sym}'` : "";
-      return `${q}#,0${frac};-${q}#,0${frac}`;
-    }
-    case "Percentage": { const pd = Math.min(d, 2); return "0" + (pd ? "." + "0".repeat(pd) : "") + "%"; }
-    case "Date": return NET_DATE[tpl.dateFormat];
-    case "DateTime": return NET_DATE[tpl.dateFormat] + " HH:mm";
-    default: return null;
+  if (NUMERIC.has(c.type)) {
+    const s = numberSpec(c, tpl);
+    const sym = s.currency ? (tpl.currency || "").replace(/['"\\]/g, "") : "";
+    const q = sym ? `'${sym}'` : "";
+    const body = (s.group ? "#,0" : "0") + { 1: "", 1e3: ",", 1e6: ",," }[s.scale] + (s.dec ? "." + "0".repeat(s.dec) : "") +
+      (s.suffix ? `"${s.suffix}"` : "") + (s.pct ? "%" : "");
+    if (s.parens) return `${q}${body};(${q}${body})`;
+    return s.currency ? `${q}${body};-${q}${body}` : body;
   }
+  if (c.type === "Date" || c.type === "DateTime") {
+    const s = dateSpec(c, tpl);
+    return [s.date && NET_DATE[s.date], s.time && (s.seconds ? "HH:mm:ss" : "HH:mm")].filter(Boolean).join(" ");
+  }
+  return null;
 }
 
 /** Column width in inches from the template setting, or a guess from type and heading length. */
