@@ -126,6 +126,7 @@ Covers connection settings and lifetime, the read-only query guard, SQL Server t
 | DELETE | `/api/connections/:id` | | `204` |
 | POST | `/api/analyze` | `{ connectionId, sql }` | `{ columns, table }` |
 | POST | `/api/preview` | `{ connectionId, sql }` | `{ rows, truncated, limit }` |
+| POST | `/api/count` | `{ connectionId, sql }` | `{ count }` (every row the query returns) |
 | GET | `/api/templates` | | `{ templates }` |
 | PUT | `/api/templates/:name` | template | `{ templates }` |
 | DELETE | `/api/templates/:name` | | `{ templates }` |

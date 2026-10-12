@@ -8,8 +8,9 @@ import { sqlErrorMessage } from "./errors.js";
  * - It runs inside a transaction that is always rolled back, as a second guard against writes.
  * - Only the first result set is used.
  * Returns { rows: any[][], truncated, limit } with rows in column order.
+ * countOnly: count every row instead, keeping none; returns { count }.
  */
-export async function previewQuery(pool, query, { limit = 200, timeoutMs = 60_000 } = {}) {
+export async function previewQuery(pool, query, { limit = 200, timeoutMs = 60_000, countOnly = false } = {}) {
   const tx = pool.transaction();
   await tx.begin();
   try {
@@ -19,6 +20,7 @@ export async function previewQuery(pool, query, { limit = 200, timeoutMs = 60_00
       req.arrayRowMode = true;
 
       const rows = [];
+      let count = 0;
       let sets = 0, truncated = false, timedOut = false, failure = null, settled = false;
 
       const settle = () => {
@@ -28,7 +30,7 @@ export async function previewQuery(pool, query, { limit = 200, timeoutMs = 60_00
         clearTimeout(fallback);
         if (timedOut) reject(new HttpError(504, `The query took longer than ${Math.round(timeoutMs / 1000)} seconds. Narrow it with a WHERE clause and try again.`));
         else if (failure) reject(failure);
-        else resolve({ rows, truncated, limit });
+        else resolve(countOnly ? { count } : { rows, truncated, limit });
       };
       // mssql always emits "done" after a cancel or error; this is only a safety net.
       let fallback = null;
@@ -39,6 +41,7 @@ export async function previewQuery(pool, query, { limit = 200, timeoutMs = 60_00
       req.on("recordset", () => { sets += 1; });
       req.on("row", (row) => {
         if (sets > 1 || truncated || timedOut) return;
+        if (countOnly) { count += 1; return; }
         if (rows.length < limit) rows.push(row.map(serializeValue));
         else { truncated = true; req.cancel(); settleSoon(); }
       });

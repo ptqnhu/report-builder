@@ -5,7 +5,7 @@ import { fakePool, describeRow } from "./helpers/fakeSqlServer.js";
 import { describeQuery } from "../src/services/db/describe.js";
 import { buildRdl } from "../src/rdl/buildRdl.js";
 import { planSlicers } from "../src/rdl/slicers.js";
-import { distinctValuesQuery } from "../src/rdl/sqlWrap.js";
+import { distinctValuesQuery, countQuery } from "../src/rdl/sqlWrap.js";
 
 const flat = (s) => s.replace(/\s+/g, " ").trim();
 
@@ -24,6 +24,13 @@ test("pick-list SQL wraps the query as a derived table", () => {
   assert.equal(flat(distinctValuesQuery(";WITH x AS (SELECT a FROM t ORDER BY a OFFSET 0 ROWS) SELECT a AS [we]ird] FROM x ORDER BY 1 OPTION (RECOMPILE)", "we]ird")),
     "WITH x AS (SELECT a FROM t ORDER BY a OFFSET 0 ROWS) SELECT DISTINCT ISNULL(NULLIF(RTRIM(CONVERT(nvarchar(4000), src.[we]]ird])), N''), N'(Blank)') AS Value FROM ( SELECT a AS [we]ird] FROM x ) AS src ORDER BY Value OPTION (RECOMPILE)");
   assert.equal(distinctValuesQuery("SELECT a FROM t FOR JSON PATH", "a"), null);
+});
+
+test("count SQL wraps the query the same way", () => {
+  assert.equal(flat(countQuery("SELECT status FROM dbo.Orders ORDER BY status;")), "SELECT COUNT_BIG(*) AS n FROM ( SELECT status FROM dbo.Orders ) AS src");
+  assert.equal(flat(countQuery(";WITH x AS (SELECT a FROM t) SELECT a FROM x OPTION (RECOMPILE)")),
+    "WITH x AS (SELECT a FROM t) SELECT COUNT_BIG(*) AS n FROM ( SELECT a FROM x ) AS src OPTION (RECOMPILE)");
+  assert.equal(countQuery("SELECT a FROM t FOR XML PATH"), null);
 });
 
 const SQL = "SELECT order_id, status, region, order_date, is_paid, revenue, discount_rate FROM dbo.Orders ORDER BY order_date";

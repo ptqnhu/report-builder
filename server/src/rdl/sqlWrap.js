@@ -35,12 +35,11 @@ function topLevel(masked, re) {
 export const quoteName = (name) => `[${String(name).replace(/]/g, "]]")}]`;
 
 /**
- * SQL listing the distinct values of one column of the report query, for an SSRS pick list:
- *   [WITH …] SELECT DISTINCT <column as trimmed text, blanks as "(Blank)"> AS Value FROM (<query>) AS src ORDER BY Value
- * The query becomes a derived table, so a final ORDER BY is dropped unless TOP or OFFSET needs it, and
- * OPTION (…) moves to the outside. Returns null when the query can't be wrapped (FOR XML/JSON).
+ * Splits the report query so it can become a derived table: [prefix]SELECT … FROM (<body>) AS src[option].
+ * A leading WITH goes in prefix, OPTION (…) moves to the outside, and a final ORDER BY is dropped unless TOP or
+ * OFFSET needs it. Returns null when the query can't be wrapped (FOR XML/JSON).
  */
-export function distinctValuesQuery(sql, column) {
+function derivedTable(sql) {
   let body = String(sql).trim().replace(/^;+\s*/, "").replace(/;\s*$/, "");
   let prefix = "", option = "";
 
@@ -63,7 +62,24 @@ export function distinctValuesQuery(sql, column) {
     const top = !setOp && /^select\s+(?:all\s+|distinct\s+)?top\b/i.test(m);
     if (!offset && !top) body = body.slice(0, order.index); // order doesn't change which rows there are
   }
+  return { prefix, body: body.trim(), option: option ? "\n" + option : "" };
+}
 
+/**
+ * SQL listing the distinct values of one column of the report query, for an SSRS pick list:
+ *   [WITH …] SELECT DISTINCT <column as trimmed text, blanks as "(Blank)"> AS Value FROM (<query>) AS src ORDER BY Value
+ * Returns null when the query can't be wrapped (see derivedTable).
+ */
+export function distinctValuesQuery(sql, column) {
+  const t = derivedTable(sql);
+  if (!t) return null;
   const value = `ISNULL(NULLIF(RTRIM(CONVERT(nvarchar(4000), src.${quoteName(column)})), N''), N'${BLANK}')`;
-  return `${prefix}SELECT DISTINCT ${value} AS Value\nFROM (\n${body.trim()}\n) AS src\nORDER BY Value${option ? "\n" + option : ""}`;
+  return `${t.prefix}SELECT DISTINCT ${value} AS Value\nFROM (\n${t.body}\n) AS src\nORDER BY Value${t.option}`;
+}
+
+/** SQL counting the rows of the report query: [WITH …] SELECT COUNT_BIG(*) FROM (<query>) AS src. null if it can't be wrapped. */
+export function countQuery(sql) {
+  const t = derivedTable(sql);
+  if (!t) return null;
+  return `${t.prefix}SELECT COUNT_BIG(*) AS n\nFROM (\n${t.body}\n) AS src${t.option}`;
 }

@@ -5,6 +5,7 @@ import { settings } from "../lib/config.js";
 import { analyzeQuery } from "../services/analyze.js";
 import { checkReadOnly } from "../services/queryGuard.js";
 import { previewQuery } from "../services/db/preview.js";
+import { countRows } from "../services/db/count.js";
 
 export default function queryRoutes(connections) {
   const router = Router();
@@ -25,6 +26,14 @@ export default function queryRoutes(connections) {
     const problem = checkReadOnly(sql);
     if (problem) throw new HttpError(422, problem);
     res.json(await previewQuery(pool, sql, { limit: settings.previewRowLimit, timeoutMs: settings.queryTimeoutMs }));
+  }));
+
+  /** POST /api/count { connectionId, sql } -> { count }: every row the query returns, not just the preview's */
+  router.post("/count", asyncHandler(async (req, res) => {
+    const { pool, sql } = read(req.body);
+    const problem = checkReadOnly(sql);
+    if (problem) throw new HttpError(422, problem);
+    res.json(await countRows(pool, sql, { timeoutMs: settings.queryTimeoutMs }));
   }));
 
   return router;
