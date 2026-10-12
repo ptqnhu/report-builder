@@ -9,12 +9,6 @@ export default function ReportStep({ exp, setExp, rdlResult, previewProps, slice
     <>
       <ExportPanel exp={exp} onChange={(p) => setExp((e) => ({ ...e, ...p }))} result={rdlResult}
         slicerLabels={slicerProps.slicers.map((s) => slicerProps.colsByKey[s.col].label)} />
-      <div className="report-bar no-print">
-        <button className="btn" onClick={() => downloadCSV(cols, rows, tpl, title)}>Download CSV</button>
-        <button className="btn" onClick={() => window.print()}>Print</button>
-        <button className="btn" onClick={onEditTemplate}>Edit template</button>
-        <button className="btn" onClick={onEditFilters}>Edit title & filters</button>
-      </div>
       <ReportDocument {...previewProps} limit={10} filterBar={slicerProps.slicers.length > 0 && <SlicerBar {...slicerProps} />} />
     </>
   );
