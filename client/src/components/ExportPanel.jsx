@@ -2,7 +2,7 @@ import { useState } from "react";
 import Segmented from "./Segmented.jsx";
 import { downloadText } from "../utils/download.js";
 
-export default function ExportPanel({ exp, onChange, result, slicerLabels = [] }) {
+export default function ExportPanel({ exp, onChange, result }) {
   const [msg, setMsg] = useState("");
   const set = (p) => { onChange(p); setMsg(""); };
   const ready = !!result.rdl && !result.loading;
@@ -60,32 +60,13 @@ export default function ExportPanel({ exp, onChange, result, slicerLabels = [] }
           )}
         </div>
 
-        <div>
-          <span className="fld-label">Filters for readers</span>
-          <p className="fld-hint" style={{ marginTop: 0, marginBottom: 12 }}>
-            {slicerLabels.length
-              ? `Readers can slice the report by ${slicerLabels.join(", ")}. Each starts on All or its default.`
-              : "None. Add some under Title & filters so readers can slice the report."}
-          </p>
-          <span className="fld-label">Your filters in SSRS</span>
-          <label className="radio">
-            <input type="radio" name="fmode" checked={exp.filterMode === "fixed"} onChange={() => set({ filterMode: "fixed" })} />
-            <span>Fixed<br /><span className="muted">The report always uses the values you set.</span></span>
-          </label>
-          <label className="radio">
-            <input type="radio" name="fmode" checked={exp.filterMode === "params"} onChange={() => set({ filterMode: "params" })} />
-            <span>Report parameters<br /><span className="muted">Readers can change the values in SSRS. Your values become the defaults.</span></span>
-          </label>
-          <div className="kv" style={{ marginTop: 12 }}>
-            <span>Page</span>
-            <Segmented label="Page orientation" value={exp.orientation} onChange={(v) => set({ orientation: v })}
-              options={[["landscape", "Landscape"], ["portrait", "Portrait"]]} />
-            <label htmlFor="schema">SSRS version</label>
-            <select id="schema" className="sel" value={exp.schema} onChange={(e) => set({ schema: e.target.value })}>
-              <option value="2016">2016 or later, Power BI Report Server</option>
-              <option value="2010">2008 R2 to 2014</option>
-            </select>
-          </div>
+        <div className="fld">
+          <label className="fld-label" htmlFor="schema">SSRS version</label>
+          <select id="schema" className="sel" value={exp.schema} onChange={(e) => set({ schema: e.target.value })} aria-describedby="schema-hint">
+            <option value="2016">2016 or later, Power BI Report Server</option>
+            <option value="2010">2008 R2 to 2014</option>
+          </select>
+          <p id="schema-hint" className="fld-hint">The version of your report server. Pick 2008 R2 to 2014 only for an older server.</p>
         </div>
       </div>
 

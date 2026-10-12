@@ -1337,6 +1337,11 @@ details.opt[open] summary {
   margin-top: 10px
 }
 
+/* Side-by-side fields (SQL Server, Database) start level */
+.export-grid .connect-grid .fld+.fld {
+  margin-top: 0
+}
+
 /* Ad hoc export: file name, format and style on one row; wraps only on narrow screens */
 .export-row {
   display: flex;

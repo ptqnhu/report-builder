@@ -7,8 +7,7 @@ export default function ReportStep({ exp, setExp, rdlResult, previewProps, slice
   const { cols, rows, tpl, title } = previewProps;
   return (
     <>
-      <ExportPanel exp={exp} onChange={(p) => setExp((e) => ({ ...e, ...p }))} result={rdlResult}
-        slicerLabels={slicerProps.slicers.map((s) => slicerProps.colsByKey[s.col].label)} />
+      <ExportPanel exp={exp} onChange={(p) => setExp((e) => ({ ...e, ...p }))} result={rdlResult} />
       <ReportDocument {...previewProps} limit={10} filterBar={slicerProps.slicers.length > 0 && <SlicerBar {...slicerProps} />} />
     </>
   );
