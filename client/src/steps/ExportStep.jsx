@@ -17,7 +17,7 @@ const TOTALS = [["show", "Show"], ["hide", "Hide"]];
  * The server runs the whole query, so the file has every row (up to its export limit), in the sort order picked
  * on the preview.
  */
-export default function ExportStep({ title, setTitle, payload, previewProps, onExpired }) {
+export default function ExportStep({ title, setTitle, payload, previewProps, onExpired, onConvert }) {
   const [format, setFormat] = useState("xlsx");
   const [style, setStyle] = useState("loanmart");
   const [totals, setTotals] = useState("show"); // a totals row at the end of Excel and PDF files (CSV has none)
@@ -82,6 +82,10 @@ export default function ExportStep({ title, setTitle, payload, previewProps, onE
             {busy ? "Running the query…" : `Download ${formatName}`}
           </button>
           {msg.text && <span className={msg.error ? "error" : "muted"} role={msg.error ? "alert" : "status"}>{msg.text}</span>}
+        </div>
+        <div className="convert-row">
+          <span className="muted">Need a formatted report on your SSRS server, with filters readers can change? Keep this query and these columns and carry on as an SSRS report.</span>
+          <button className="btn btn-sm" onClick={onConvert}>Convert to SSRS report →</button>
         </div>
       </section>
       {branded ? (

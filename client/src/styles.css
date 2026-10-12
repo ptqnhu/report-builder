@@ -1368,6 +1368,22 @@ details.opt[open] summary {
   border-top: 1px solid var(--line2)
 }
 
+/* Ad hoc export: the way across to an SSRS report, below the download button */
+.convert-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line2)
+}
+
+.convert-row .muted {
+  flex: 1 1 320px
+}
+
 .rdl-xml {
   margin-top: 10px;
   font-family: 'IBM Plex Mono', monospace;

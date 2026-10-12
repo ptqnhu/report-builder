@@ -53,13 +53,29 @@ export default function App({ kind }) {
 
   /** Switching kind keeps the shared steps (connection, query, columns) but not the old kind's own steps. */
   const lastKind = useRef(kind);
+  const convertTo = useRef(null); // the step to open after "Convert to SSRS report"
   useEffect(() => {
     if (lastKind.current === kind) return;
     lastKind.current = kind;
+    const target = convertTo.current;
+    convertTo.current = null;
+    if (target && FLOWS[kind].includes(target)) {
+      setError("");
+      setStep(target);
+      setReached(FLOWS[kind].indexOf(target));
+      return;
+    }
     setReached((r) => Math.min(r, SHARED_STEPS - 1));
     if (!FLOWS[kind].includes(step)) setStep(FLOWS[kind][SHARED_STEPS - 1]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind]);
+
+  /** Ad hoc → SSRS: same connection, query and columns; carry on from the first SSRS-only step. */
+  function convertToSsrs() {
+    convertTo.current = "template";
+    location.hash = "#/build/ssrs";
+    window.scrollTo(0, 0);
+  }
 
   /** The server forgot the connection (idle timeout or restart): send the user back to reconnect. */
   function handleExpired(e) {
@@ -226,7 +242,7 @@ export default function App({ kind }) {
 
           {step === "export" && (
             <ExportStep
-              title={title} setTitle={setTitle} onExpired={handleExpired}
+              title={title} setTitle={setTitle} onExpired={handleExpired} onConvert={convertToSsrs}
               payload={{
                 connectionId: connection?.connectionId, sql, tpl, sort,
                 columns: columns.map(({ key, name, type, selected, unnamed, dup }) => ({ key, name, type, selected, unnamed, dup })),
