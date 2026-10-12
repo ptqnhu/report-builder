@@ -278,6 +278,11 @@
   left: -110px
 }
 
+/* Not in the builder: it sits behind the left of the boxes and shows through the glass as a pale patch */
+.rb:not(.lp-dark) .rb-orb:nth-child(2) {
+  display: none
+}
+
 .rb-orb:nth-child(3) {
   --light: #6FE6D4;
   --mid: #1F9DA8;
