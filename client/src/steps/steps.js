@@ -19,19 +19,21 @@ export const SHARED_STEPS = COMMON.length;
 
 export const KIND_NAMES = { adhoc: "Ad hoc export", ssrs: "SSRS report" };
 
-export const EXAMPLE_SQL = `SELECT
-  o.order_id,
-  c.customer_name AS customer,
-  c.email,
-  c.city,
-  o.order_date,
-  o.status,
-  o.is_paid,
-  SUM(oi.quantity) AS total_qty,
-  SUM(oi.quantity * oi.unit_price) AS revenue,
-  AVG(oi.discount_rate) AS avg_discount
-FROM orders o
-JOIN customers c ON c.id = o.customer_id
-JOIN order_items oi ON oi.order_id = o.order_id
-GROUP BY o.order_id, c.customer_name, c.email, c.city,
-         o.order_date, o.status, o.is_paid`;
+export const EXAMPLE_SQL =
+`SELECT TOP 10
+    p.Name               AS ProductName,
+    pc.Name              AS Category,
+    SUM(sod.OrderQty)    AS TotalQuantitySold,
+    SUM(sod.LineTotal)   AS TotalRevenue
+FROM Sales.SalesOrderDetail AS sod
+JOIN Production.Product AS p
+    ON sod.ProductID = p.ProductID
+JOIN Production.ProductSubcategory AS psc
+    ON p.ProductSubcategoryID = psc.ProductSubcategoryID
+JOIN Production.ProductCategory AS pc
+    ON psc.ProductCategoryID = pc.ProductCategoryID
+GROUP BY
+  p.Name, pc.Name
+ORDER BY
+  TotalRevenue DESC
+;`;
