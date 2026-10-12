@@ -18,6 +18,7 @@ const ICONS = {
   filter: "M4 5h16l-6 8v5l-4 2v-7L4 5Z",
   arrow: "M5 12h14M13 6l6 6-6 6",
   search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Zm5-2 4 4",
+  chevron: "M6 9l6 6 6-6",
 };
 const Icon = ({ name, size = 16 }) => (
   <svg className="lp-icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -174,6 +175,45 @@ function Diagram() {
   );
 }
 
+/** "Get started" in the top bar: opens a small menu with the two ways into the builder. */
+function StartMenu({ onStart }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  // While open, a click outside the menu or the Escape key closes it
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e) => { if (!ref.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="lp-menu" ref={ref}>
+      <button className="btn btn-primary btn-sm" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        Get started <Icon name="chevron" size={14} />
+      </button>
+      {open && (
+        <div className="lp-menu-list" role="menu">
+          <button role="menuitem" onClick={() => onStart("ssrs")}>
+            <Icon name="file" size={18} />
+            <span><strong>SSRS report</strong><small>A formatted .rdl file for your report server</small></span>
+          </button>
+          <button role="menuitem" onClick={() => onStart("adhoc")}>
+            <Icon name="columns" size={18} />
+            <span><strong>Ad hoc export</strong><small>Every row as CSV, Excel or PDF</small></span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Front page: what the app does, and the way into the builder. */
 export default function Landing({ onStart }) {
   const [local, setLocal] = useState(null);
@@ -200,7 +240,7 @@ export default function Landing({ onStart }) {
             <a href="#how">How it works</a>
             <a href="#features">Features</a>
             <a href="#templates">Templates</a>
-            <button className="btn btn-primary btn-sm" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Get started</button>
+            <StartMenu onStart={onStart} />
           </nav>
         </div>
       </header>
@@ -258,7 +298,6 @@ export default function Landing({ onStart }) {
           <ul className="lp-chips">
             {FEATURES.map((f) => <li key={f.title}><Icon name={f.icon} size={14} />{f.title}</li>)}
           </ul>
-          {getStarted()}
         </div>
       </section>
 

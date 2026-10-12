@@ -132,6 +132,78 @@
   color: var(--accent)
 }
 
+/* "Get started" menu in the top bar */
+.lp-menu {
+  position: relative
+}
+
+.lp-menu>.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px
+}
+
+.lp-menu>.btn .lp-icon {
+  transition: transform .15s ease
+}
+
+.lp-menu>.btn[aria-expanded=true] .lp-icon {
+  transform: rotate(180deg)
+}
+
+/* Nearly solid: a blur inside the already-blurred top bar doesn't show */
+.lp-menu-list {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  display: grid;
+  gap: 2px;
+  min-width: 290px;
+  padding: 6px;
+  background: rgba(18, 20, 28, .96);
+  border: 1px solid var(--glass-line);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px -12px rgba(0, 0, 0, .6)
+}
+
+.lp-menu-list button {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer
+}
+
+.lp-menu-list button:hover {
+  background: rgba(255, 255, 255, .07)
+}
+
+.lp-menu-list .lp-icon {
+  margin-top: 1px;
+  color: var(--accent)
+}
+
+.lp-menu-list strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600
+}
+
+.lp-menu-list small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--ink3)
+}
+
 .lp-hero {
   padding-top: clamp(40px, 6vw, 80px)
 }
