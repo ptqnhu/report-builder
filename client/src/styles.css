@@ -2025,3 +2025,51 @@ body {
   padding: 1px 5px;
   outline: none
 }
+
+/* AI query assistant (Query step) */
+.ai .fld-label {
+  margin: 0
+}
+
+.ai-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0;
+  max-height: 420px;
+  overflow-y: auto
+}
+
+.ai-msg {
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap
+}
+
+.ai-user {
+  align-self: flex-end;
+  max-width: 80%;
+  background: var(--accent-soft)
+}
+
+.ai-answer {
+  background: var(--field);
+  border: 1px solid var(--field-line)
+}
+
+.ai-answer p {
+  margin: 0 0 8px
+}
+
+.ai-sql {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  margin: 0 0 8px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, .25);
+  overflow-x: auto;
+  white-space: pre
+}

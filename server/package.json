@@ -10,6 +10,7 @@
     "test": "node --test \"test/**/*.test.js\""
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
     "@report-builder/shared": "1.0.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",

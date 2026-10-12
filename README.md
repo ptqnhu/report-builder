@@ -6,6 +6,7 @@ The steps are: **Connect → Query → Columns → Data types → Template → T
 
 - **Connect.** Sign in with a SQL Server login or a Windows account (NTLM). The password is used once to open a connection pool on the app's server; the browser only keeps a random connection id, and the password is never stored or written into the report.
 - **Query.** SQL Server describes the query with `sys.sp_describe_first_result_set`, which gives the exact column names and SQL types without running it. `SELECT *` works.
+- **Ask AI.** On the Query step, describe the report in plain English ("loans funded last month with customer name and amount") and Claude writes the query into the editor. Follow-up messages refine it. Needs `ANTHROPIC_API_KEY` (see below).
 - **Preview.** The query runs for real, but streams only the first rows (200 by default) and is cancelled after that. It runs inside a transaction that is always rolled back.
 - **Export.** The `.rdl` file's data source is filled in from the connection.
 
@@ -108,6 +109,12 @@ Environment variables (all optional):
 | `CLIENT_ORIGIN` | any | Allowed CORS origin if the UI is hosted elsewhere |
 | `TEMPLATES_FILE` | `server/data/templates.json` | Where saved templates are stored |
 | `BODY_LIMIT` | `2mb` | Largest request body |
+| `ANTHROPIC_API_KEY` | none | Turns on the AI query assistant. Get a key at https://console.anthropic.com |
+| `AI_MODEL` | `claude-opus-5-5` | Claude model the assistant uses |
+| `AI_EFFORT` | `high` | How hard it thinks: `low`, `medium`, `high`, `xhigh` or `max` |
+| `AI_SCHEMA_MAX_CHARS` | `1500000` | Largest schema description the assistant may send |
+
+These can also go in a `.env` file at the project root (`ANTHROPIC_API_KEY=sk-ant-...`); it's ignored by git.
 
 ## Tests
 
@@ -127,6 +134,7 @@ Covers connection settings and lifetime, the read-only query guard, SQL Server t
 | POST | `/api/analyze` | `{ connectionId, sql }` | `{ columns, table }` |
 | POST | `/api/preview` | `{ connectionId, sql }` | `{ rows, truncated, limit }` |
 | POST | `/api/count` | `{ connectionId, sql }` | `{ count }` (every row the query returns) |
+| POST | `/api/ai/query` | `{ connectionId, messages: [{ role: "user", content } \| { role: "assistant", sql, explanation }], sql? }` | `{ sql, explanation }` |
 | GET | `/api/templates` | | `{ templates }` |
 | PUT | `/api/templates/:name` | template | `{ templates }` |
 | DELETE | `/api/templates/:name` | | `{ templates }` |
@@ -142,6 +150,7 @@ An expired or unknown `connectionId` returns **410**; the UI then asks the user 
 - **Set `ALLOWED_SERVERS`** so the app can only connect to your SQL Servers.
 - **Serve the app over HTTPS**, since passwords are sent from the browser to the app's server when connecting.
 - Passwords live only in the server's memory, inside the connection pool, and are dropped when the connection closes or goes idle. They're never logged, returned to the browser, or written into `.rdl` files.
+- **The AI assistant** sends the database's table, view and column names and types, plus what the user types, to Anthropic's API. It never sends row data. Leave `ANTHROPIC_API_KEY` unset if schema names mustn't leave your network.
 - The app has no user accounts of its own. Run it on your internal network, or put it behind your existing single sign-on.
 
 ## Uploading to SSRS

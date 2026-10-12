@@ -47,6 +47,8 @@ export const api = {
   analyze: (connectionId, sql) => request("/analyze", { method: "POST", body: { connectionId, sql } }),
   preview: (connectionId, sql) => request("/preview", { method: "POST", body: { connectionId, sql } }),
   count: (connectionId, sql) => request("/count", { method: "POST", body: { connectionId, sql } }),
+  /** messages: [{role: "user", content} | {role: "assistant", sql, explanation}]. Returns { sql, explanation }. */
+  aiQuery: (connectionId, messages, sql) => request("/ai/query", { method: "POST", body: { connectionId, messages, sql } }),
   rdl: (payload) => request("/rdl", { method: "POST", body: payload }),
   exportFile,
   listTemplates: () => request("/templates"),

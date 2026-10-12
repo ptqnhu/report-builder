@@ -30,6 +30,7 @@ export default function App({ kind }) {
   // Connection and report definition
   const [connection, setConnection] = useState(null);
   const [sql, setSql] = useState("");
+  const [aiChat, setAiChat] = useState([]); // the conversation with the AI query assistant
   const [analysis, setAnalysis] = useState(EMPTY_ANALYSIS);
   const [tpl, setTpl] = useState(DEFAULT_TPL);
   const [title, setTitle] = useState("");
@@ -89,6 +90,7 @@ export default function App({ kind }) {
   function onConnected(conn) {
     setConnection(conn);
     setAnalysis(EMPTY_ANALYSIS); // a new database means the query must be read again
+    setAiChat([]);
     setReached(at("connect"));
     setExp((e) => ({ ...e, server: conn.server, database: conn.database, dsAuth: conn.authType === "sql" ? "sql" : "windows" }));
     setError("");
@@ -220,7 +222,7 @@ export default function App({ kind }) {
 
           {step === "connect" && <ConnectStep connection={connection} onConnected={onConnected} onDisconnect={onDisconnect} />}
 
-          {step === "query" && <QueryStep sql={sql} setSql={setSql} connection={connection} />}
+          {step === "query" && <QueryStep sql={sql} setSql={setSql} connection={connection} aiChat={aiChat} setAiChat={setAiChat} onExpired={handleExpired} />}
 
           {step === "columns" && <ColumnsStep columns={columns} setColumns={setColumns} rows={rows} tpl={tpl} setTpl={setTpl} />}
 

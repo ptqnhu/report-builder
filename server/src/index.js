@@ -1,3 +1,4 @@
+import "./lib/loadEnv.js"; // first, so settings see the .env values
 import { createApp } from "./app.js";
 import { settings } from "./lib/config.js";
 import { createConnectionManager } from "./services/db/connectionManager.js";
