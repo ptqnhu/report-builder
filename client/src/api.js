@@ -46,6 +46,7 @@ export const api = {
   disconnect: (id, { keepalive = false } = {}) => request(`/connections/${encodeURIComponent(id)}`, { method: "DELETE", keepalive }),
   analyze: (connectionId, sql) => request("/analyze", { method: "POST", body: { connectionId, sql } }),
   preview: (connectionId, sql) => request("/preview", { method: "POST", body: { connectionId, sql } }),
+  count: (connectionId, sql) => request("/count", { method: "POST", body: { connectionId, sql } }),
   rdl: (payload) => request("/rdl", { method: "POST", body: payload }),
   exportFile,
   listTemplates: () => request("/templates"),

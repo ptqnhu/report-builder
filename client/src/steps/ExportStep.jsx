@@ -4,12 +4,14 @@ import { api } from "../api.js";
 import Segmented from "../components/Segmented.jsx";
 import ReportTable from "../components/ReportTable.jsx";
 import ReportDocument from "../components/ReportDocument.jsx";
+import PreviewNote from "../components/PreviewNote.jsx";
 import { downloadBlob } from "../utils/download.js";
 
 /** [id, menu label, button label] */
 const FORMATS = [["xlsx", "Excel (.xlsx)", "Excel"], ["pdf", "PDF (.pdf)", "PDF"], ["csv", "CSV (.csv)", "CSV"]];
 const STYLES = [["loanmart", "LoanMart"], ["plain", "Plain"]];
 const TOTALS = [["show", "Show"], ["hide", "Hide"]];
+const PREVIEW_ROWS = 10; // rows shown in the preview below; the file itself has every row
 
 /**
  * Ad hoc export: name the file, pick Excel, PDF or CSV (Excel and PDF plain or in the LoanMart template's look),
@@ -89,12 +91,13 @@ export default function ExportStep({ title, setTitle, payload, previewProps, onE
         </div>
       </section>
       {branded ? (
-        <ReportDocument {...previewProps} tpl={{ ...tpl, theme: "loanmart", rowNumbers: false }} title={title} desc="" filters={[]} />
+        <ReportDocument {...previewProps} tpl={{ ...tpl, theme: "loanmart", rowNumbers: false }} title={title} desc="" filters={[]} limit={PREVIEW_ROWS} />
       ) : (
         <div className="panel" style={{ padding: 0, marginTop: 16 }}>
-          <ReportTable cols={cols} rows={rows} tpl={{ ...tpl, theme: "clean", zebra: false, rowNumbers: false }} sort={sort} onSort={onSort} onMove={onMove} />
+          <ReportTable cols={cols} rows={rows} tpl={{ ...tpl, theme: "clean", zebra: false, rowNumbers: false }} sort={sort} onSort={onSort} onMove={onMove} limit={PREVIEW_ROWS} />
         </div>
       )}
+      {!branded && <PreviewNote {...previewProps} limit={PREVIEW_ROWS} />}
     </>
   );
 }

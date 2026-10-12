@@ -189,7 +189,7 @@ export default function App({ kind }) {
   }
 
   const previewProps = {
-    cols: effCols, totalRows: rows.length, moreRows: preview.truncated, tpl, title, desc, colsByKey, sort, onSort: toggleSort, onMove: moveColumn, loading: preview.loading,
+    cols: effCols, totalRows: rows.length, moreRows: preview.truncated, rowTotal: preview.count, counting: preview.counting, tpl, title, desc, colsByKey, sort, onSort: toggleSort, onMove: moveColumn, loading: preview.loading,
   };
   const S = STEPS[step];
   const nextLabel = typeof S.next === "function" ? S.next(kind) : S.next;

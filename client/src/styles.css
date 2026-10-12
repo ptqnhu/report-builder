@@ -1100,6 +1100,15 @@ details.opt[open] summary {
   font-size: 13px
 }
 
+/* "*Preview 10 of N rows": a footnote under the report preview, outside the report itself */
+.rb .preview-note {
+  margin-top: 14px;
+  padding-left: 2px;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--ink2)
+}
+
 .doc-note {
   font-size: 13px;
   color: var(--ink3);

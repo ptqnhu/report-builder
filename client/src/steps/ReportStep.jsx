@@ -15,7 +15,7 @@ export default function ReportStep({ exp, setExp, rdlResult, previewProps, slice
         <button className="btn" onClick={onEditTemplate}>Edit template</button>
         <button className="btn" onClick={onEditFilters}>Edit title & filters</button>
       </div>
-      <ReportDocument {...previewProps} filterBar={slicerProps.slicers.length > 0 && <SlicerBar {...slicerProps} />} />
+      <ReportDocument {...previewProps} limit={10} filterBar={slicerProps.slicers.length > 0 && <SlicerBar {...slicerProps} />} />
     </>
   );
 }

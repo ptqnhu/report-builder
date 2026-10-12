@@ -5,9 +5,11 @@ import { api } from "../api.js";
 /**
  * Runs the query on the server (first N rows) once per analysis and returns typed rows keyed by column key.
  * Changing a column's type only re-converts the rows already loaded; it doesn't query again.
+ * `count` is every row the query returns: the loaded rows when that's all of them, otherwise counted on the server
+ * afterwards (`counting` while it runs; null if the count failed).
  */
 export function usePreviewRows({ connectionId, sql, analysisKey, columns, onExpired }) {
-  const [state, setState] = useState({ key: null, raw: [], truncated: false, limit: 0, error: "", loading: false });
+  const [state, setState] = useState({ key: null, raw: [], truncated: false, limit: 0, count: null, counting: false, error: "", loading: false });
   const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
@@ -15,7 +17,14 @@ export function usePreviewRows({ connectionId, sql, analysisKey, columns, onExpi
     let cancelled = false;
     setState((s) => ({ ...s, loading: true, error: "" }));
     api.preview(connectionId, sql)
-      .then((r) => { if (!cancelled) setState({ key: analysisKey, raw: r.rows, truncated: r.truncated, limit: r.limit, error: "", loading: false }); })
+      .then((r) => {
+        if (cancelled) return;
+        setState({ key: analysisKey, raw: r.rows, truncated: r.truncated, limit: r.limit, count: r.truncated ? null : r.rows.length, counting: r.truncated, error: "", loading: false });
+        if (!r.truncated) return;
+        api.count(connectionId, sql)
+          .then((c) => { if (!cancelled) setState((s) => ({ ...s, count: c.count, counting: false })); })
+          .catch(() => { if (!cancelled) setState((s) => ({ ...s, counting: false })); });
+      })
       .catch((e) => {
         if (cancelled) return;
         if (e.status === 410) onExpired?.(e);
@@ -31,5 +40,8 @@ export function usePreviewRows({ connectionId, sql, analysisKey, columns, onExpi
     return state.raw.map((arr) => Object.fromEntries(columns.map((c) => [c.key, coerce(arr[c.index], c.type)])));
   }, [state, columns, analysisKey]);
 
-  return { rows, loading: state.loading, error: state.error, truncated: state.truncated, limit: state.limit, refresh: () => setNonce((n) => n + 1) };
+  return {
+    rows, loading: state.loading, error: state.error, truncated: state.truncated, limit: state.limit,
+    count: state.count, counting: state.counting, refresh: () => setNonce((n) => n + 1),
+  };
 }
