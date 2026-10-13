@@ -6,10 +6,14 @@ export function useTemplates() {
   const [templates, setTemplates] = useState([]);
   const [message, setMessage] = useState("");
 
+  // Loads again on every page change, so templates made in the designer show up in a report the builder kept open.
   useEffect(() => {
-    api.listTemplates()
+    const load = () => api.listTemplates()
       .then((r) => setTemplates(r.templates))
       .catch((e) => setMessage(`Saved templates didn't load. ${e.message}`));
+    load();
+    window.addEventListener("hashchange", load);
+    return () => window.removeEventListener("hashchange", load);
   }, []);
 
   async function save(tpl) {

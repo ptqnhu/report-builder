@@ -19,8 +19,10 @@ const ICONS = {
   arrow: "M5 12h14M13 6l6 6-6 6",
   search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Zm5-2 4 4",
   chevron: "M6 9l6 6 6-6",
+  spark: "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3ZM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z",
+  back: "M19 12H5M11 6l-6 6 6 6",
 };
-const Icon = ({ name, size = 16 }) => (
+export const Icon = ({ name, size = 16 }) => (
   <svg className="lp-icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d={ICONS[name]} />
   </svg>
@@ -35,7 +37,7 @@ const STAGES = [
 const FEATURES = [
   { icon: "type", title: "Types from SQL Server", text: "Numbers, dates, money and percentages are read from the column's SQL type, so formatting and totals are right from the start." },
   { icon: "eye", title: "Live preview", text: "See the first 200 rows of your real data as you work, sorted and filtered the way the finished report will be." },
-  { icon: "layers", title: "Reusable templates", text: "Save a look once and apply it to any query. Templates adapt to columns they haven't seen before." },
+  { icon: "layers", title: "Reusable templates", text: "Design a template once on sample data, save it, and apply it to any report: layout, style, header, footer and formats."},
   { icon: "shield", title: "Read-only by design", text: "Only SELECT queries are allowed, previews run in a transaction that is always rolled back, and passwords are never stored." },
   { icon: "monitor", title: "No login on this computer", text: "A SQL Server on your own machine opens with your Windows account. No user name or password to type." },
   { icon: "filter", title: "Filters and sort carried over", text: "The filters and sort order you set in the preview are written into the .rdl file, so the report opens the same way." },
@@ -208,6 +210,10 @@ function StartMenu({ onStart }) {
             <Icon name="columns" size={18} />
             <span><strong>Ad hoc export</strong><small>Every row as CSV, Excel or PDF</small></span>
           </button>
+          <a role="menuitem" href="#/templates">
+            <Icon name="layers" size={18} />
+            <span><strong>Template designer</strong><small>Design report templates on sample data</small></span>
+          </a>
         </div>
       )}
     </div>
@@ -256,7 +262,7 @@ export default function Landing({ onStart }) {
           </p>
           <div className="lp-actions">
             {getStarted()}
-            <a className="btn lp-cta" href="#how">Learn more</a>
+            <a className="btn lp-cta" href="#/options">Learn more</a>
           </div>
           {local && (
             <p className="lp-local">
@@ -318,28 +324,29 @@ export default function Landing({ onStart }) {
         <div className="lp-card lp-template">
           <p className="lp-card-title"><Icon name="layers" size={14} /> Template · Sales ledger</p>
           <div className="lp-field">
-            <span>Column format</span>
-            <code>[ Revenue ] → Currency · 2 decimals · Sum</code>
-          </div>
-          <div className="lp-field">
-            <span>New column, never seen before</span>
-            <code>[ Discount ] → Percent · default width</code>
-          </div>
-          <div className="lp-field">
             <span>Look</span>
             <code>Ledger · zebra rows · first column pinned</code>
+          </div>
+          <div className="lp-field">
+            <span>Formats</span>
+            <code>$ · 2 decimals · 14 Mar 2026</code>
+          </div>
+          <div className="lp-field">
+            <span>Header and footer</span>
+            <code>LoanMart Collections · Internal use only</code>
           </div>
         </div>
         <div>
           <h2>Flexible templates – no XML required</h2>
           <p className="lp-copy">
-            Shape a report once and save it as a template. Use it with any other query: columns it knows keep their
-            format, and new columns get sensible defaults from their SQL type.
+            Design a template in the template designer, on sample data, with no database needed. Pick the style, row
+            height, layout, header, footer and number and date formats, and save it.
           </p>
           <p className="lp-copy">
-            Need a different look? Change the style, row height or column widths and see it on real rows straight away.
-            The .rdl file is written for you.
+            Then apply it to any SSRS report in the Template step. Each report can still adjust its own column
+            headings and widths. The .rdl file is written for you.
           </p>
+          <a className="btn lp-cta" href="#/templates">Open the template designer <Icon name="arrow" size={15} /></a>
         </div>
       </section>
 

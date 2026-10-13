@@ -35,6 +35,15 @@ export const DEFAULT_TPL = {
   cols: {},
 };
 
+/**
+ * The report-wide settings a saved template carries: layout, look, header and footer, formats.
+ * Not `order` or `cols`, which belong to one query's columns.
+ */
+export const STYLE_KEYS = Object.keys(DEFAULT_TPL).filter((k) => !["name", "order", "cols"].includes(k));
+
+/** A template's report-wide settings, with defaults for any it doesn't have. */
+export const templateStyle = (tpl) => Object.fromEntries(STYLE_KEYS.map((k) => [k, tpl?.[k] ?? DEFAULT_TPL[k]]));
+
 export const DEFAULT_EXPORT = {
   dsMode: "embedded", // "embedded" connection string or "shared" data source on the report server
   dsRef: "",

@@ -2073,3 +2073,31 @@ body {
   overflow-x: auto;
   white-space: pre
 }
+
+/* Template designer page: the list of saved templates */
+.tpl-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px
+}
+
+.tpl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--field);
+  border: 1px solid var(--field-line)
+}
+
+.fld-hint a {
+  color: var(--accent)
+}
+
+a.btn {
+  text-decoration: none
+}
