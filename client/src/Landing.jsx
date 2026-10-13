@@ -254,10 +254,11 @@ export default function Landing({ onStart }) {
       <div className="lp-hero-wrap">
 
         <section className="lp lp-hero">
-          <h1>Turn any SQL query into a finished SSRS report</h1>
+          <h1>From a question about your data to a finished report</h1>
           <p className="lp-lead">
-            Write a SELECT statement, shape the result on real data, and download a ready-to-upload .rdl file,
-            or export every row to CSV or Excel.
+            Describe what you need and let AI write the query, or paste your own SELECT. Shape the result on real
+            data, then publish it as an SSRS report or download every row as Excel, PDF or CSV. Design a template
+            once and reuse it on every report.
             No Report Builder, no Visual Studio, no hand-editing XML.
           </p>
           <div className="lp-actions">
@@ -346,15 +347,15 @@ export default function Landing({ onStart }) {
             Then apply it to any SSRS report in the Template step. Each report can still adjust its own column
             headings and widths. The .rdl file is written for you.
           </p>
-          <a className="btn lp-cta" href="#/templates">Open the template designer <Icon name="arrow" size={15} /></a>
+          <a className="btn btn-primary lp-cta" style={{ marginTop: 22 }} href="#/templates">Open the template designer <Icon name="arrow" size={15} /></a>
         </div>
       </section>
 
       <section className="lp lp-end">
         <div className="lp-card lp-end-card">
           <div>
-            <h2>Ready when your query is</h2>
-            <p>Exports for SSRS 2008 R2 and later, including Power BI Report Server.</p>
+            <h2>Ready when you are</h2>
+            <p>SSRS reports for 2008 R2 and later, including Power BI Report Server, plus Excel, PDF and CSV files.</p>
           </div>
           {getStarted()}
         </div>
@@ -362,7 +363,7 @@ export default function Landing({ onStart }) {
 
       <footer className="lp lp-foot">
         <p className="lp-brand sm"><Logo size={20} />Report builder</p>
-        <span>From SQL query to SSRS report</span>
+        <span>From question to finished report</span>
       </footer>
     </div>
     </>

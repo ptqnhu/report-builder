@@ -46,8 +46,12 @@
   margin: 0
 }
 
+/* The main area fills the window, so on short steps the bottom bar (.rb-nav) sits at the window's bottom edge
+   rather than partway down the page */
 .rb-shell {
-  min-height: 100vh
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column
 }
 
 /* Sticky top bar: logo and the connected database. Stays at the top while scrolling. */
@@ -193,7 +197,15 @@
 
 .rb-main {
   padding: 28px clamp(16px, 4vw, 48px) 0;
-  min-width: 0
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column
+}
+
+/* Space between the step and the bottom bar; the bar's own margin-top: auto pushes it down on short steps */
+.rb-main > :nth-last-child(2) {
+  margin-bottom: 28px
 }
 
 .page-head {
@@ -276,11 +288,6 @@
   height: 380px;
   top: 38%;
   left: -110px
-}
-
-/* Not in the builder: it sits behind the left of the boxes and shows through the glass as a pale patch */
-.rb:not(.lp-dark) .rb-orb:nth-child(2) {
-  display: none
 }
 
 .rb-orb:nth-child(3) {
@@ -848,11 +855,14 @@ details.opt[open] summary {
 .rb-nav {
   position: sticky;
   bottom: 0;
-  /* Fully clear: no tint and no blur, just the line on top. */
-  background: transparent;
-  border-top: 1px solid rgba(255, 255, 255, .12);
-  padding: 14px 0;
-  margin-top: 28px;
+  /* Frosted like the top bar but more solid, edge to edge, so the light report scrolls behind it
+     instead of showing through the buttons */
+  background: rgba(12, 14, 20, .92);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-top: 1px solid rgba(255, 255, 255, .08);
+  padding: 14px clamp(16px, 4vw, 48px);
+  margin: auto calc(-1 * clamp(16px, 4vw, 48px)) 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1448,7 +1458,8 @@ details.opt[open] summary {
     display: none !important
   }
 
-  .rb-shell {
+  .rb-shell,
+  .rb-main {
     display: block
   }
 
@@ -2026,9 +2037,38 @@ body {
   outline: none
 }
 
-/* AI query assistant (Query step) */
-.ai .fld-label {
+/* AI query assistant (Query step): label row, conversation, text box, then the note beside Send */
+.ai-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 28px;
+  margin-bottom: 6px
+}
+
+.ai-head .fld-label {
   margin: 0
+}
+
+/* Footer under a text box (AI assistant, SQL query): the note wraps on its own, the button keeps its place
+   at the top right */
+.panel-foot {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 10px
+}
+
+.panel-foot .muted {
+  flex: 1;
+  min-width: 0;
+  padding-top: 4px
+}
+
+.panel-foot .btn {
+  flex: none
 }
 
 .ai-chat {
@@ -2100,4 +2140,9 @@ body {
 
 a.btn {
   text-decoration: none
+}
+
+/* Always keep room for the scrollbar, so short and long pages are the same width and the circles don't shift */
+html {
+  scrollbar-gutter: stable
 }

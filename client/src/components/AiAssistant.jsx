@@ -34,8 +34,8 @@ export default function AiAssistant({ connection, sql, setSql, chat, setChat, on
 
   return (
     <div className="panel ai">
-      <div className="row between">
-        <span className="fld-label">Ask AI to write the query</span>
+      <div className="ai-head">
+        <label className="fld-label" htmlFor="ai-ask">Ask AI to write the query</label>
         {chat.length > 0 && <button className="btn btn-quiet btn-sm" onClick={() => { setChat([]); setError(""); }} disabled={busy}>New conversation</button>}
       </div>
 
@@ -60,11 +60,11 @@ export default function AiAssistant({ connection, sql, setSql, chat, setChat, on
         </div>
       )}
 
-      <textarea className="ta" rows={3} value={text} onChange={(e) => setText(e.target.value)} disabled={busy}
+      <textarea id="ai-ask" className="ta" rows={3} value={text} onChange={(e) => setText(e.target.value)} disabled={busy}
         onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) send(); }}
         placeholder={chat.length ? "Ask for a change, e.g. “only active loans” or “add the customer's phone number”"
           : "Describe the report, e.g. “Loans funded last month with the customer name, amount and branch”"} />
-      <div className="row between" style={{ marginTop: 8 }}>
+      <div className="panel-foot">
         <span className="muted">Only table and column names are sent to the AI, never your data. Check the query before you use it.</span>
         <button className="btn btn-primary btn-sm" onClick={send} disabled={busy || !text.trim()}>{busy ? "Writing…" : "Send"}</button>
       </div>

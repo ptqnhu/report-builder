@@ -14,9 +14,9 @@ export default function QueryStep({ sql, setSql, connection, aiChat, setAiChat, 
           <textarea className="ta code" rows={14} spellCheck={false} value={sql} onChange={(e) => setSql(e.target.value)}
             placeholder={"SELECT customer_name, order_date, total\nFROM dbo.Orders\nWHERE order_date >= '2026-01-01'"} />
         </label>
-        <div className="row between" style={{ marginTop: 8 }}>
-          <button className="btn btn-quiet btn-sm" onClick={() => setSql(EXAMPLE_SQL)}>Load an example query</button>
+        <div className="panel-foot">
           <span className="muted">Only SELECT statements (including WITH … SELECT) are allowed.</span>
+          <button className="btn btn-quiet btn-sm" onClick={() => setSql(EXAMPLE_SQL)}>Load an example query</button>
         </div>
       </div>
     </>

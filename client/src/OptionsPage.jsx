@@ -75,7 +75,7 @@ const COMPARE = [
 
 /** "Learn more" page (#/options): every way to use the app, with a way into each. */
 export default function OptionsPage({ onStart }) {
-  useEffect(() => window.scrollTo(0, 0), []); // opened from partway down the home page
+  useEffect(() => { window.scrollTo(0, 0); }, []); // opened from partway down the home page
   const start = (go) => (go.startsWith("#") ? (location.hash = go) : onStart(go));
 
   return (
@@ -106,7 +106,7 @@ export default function OptionsPage({ onStart }) {
                   {o.gets.map((g) => <li key={g}>{g}</li>)}
                 </ul>
                 <p className="lp-needs"><strong>You'll need:</strong> {o.needs}</p>
-                <button className="btn lp-cta" onClick={() => start(o.go)}>{o.action} <Icon name="arrow" size={15} /></button>
+                <button className="btn btn-primary lp-cta" onClick={() => start(o.go)}>{o.action} <Icon name="arrow" size={15} /></button>
               </li>
             ))}
           </ul>
@@ -130,7 +130,7 @@ export default function OptionsPage({ onStart }) {
 
         <footer className="lp lp-foot">
           <p className="lp-brand sm"><Logo size={20} />Report builder</p>
-          <span>From SQL query to SSRS report</span>
+          <span>From question to finished report</span>
         </footer>
       </div>
     </>
