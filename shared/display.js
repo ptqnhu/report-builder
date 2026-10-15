@@ -1,4 +1,4 @@
-import { DATE_FORMATS } from "./constants.js";
+import { NUMERIC } from "./constants.js";
 import { idLike } from "./text.js";
 
 /**
@@ -7,12 +7,12 @@ import { idLike } from "./text.js";
  * Options per type: [id, name]. The Columns step shows each with an example made from the column's own data.
  */
 export const DISPLAY_OPTIONS = {
-  Text: [["auto", "As written"], ["upper", "UPPERCASE"], ["lower", "lowercase"]],
+  Text: [["auto", "As written"], ["upper", "UPPERCASE"], ["lower", "lowercase"], ["proper", "Proper Case"]],
   Integer: [["auto", "Default"], ["n0", "Thousands separators"], ["plain", "No separators"], ["k", "In thousands (K)"], ["m", "In millions (M)"]],
   Decimal: [["auto", "Default"], ["n0", "No decimals"], ["n1", "1 decimal"], ["n2", "2 decimals"], ["n3", "3 decimals"], ["n4", "4 decimals"], ["k", "In thousands (K)"], ["m", "In millions (M)"]],
   Currency: [["auto", "Default"], ["n0", "No decimals"], ["n2", "2 decimals"], ["paren", "Negatives in brackets"], ["k", "In thousands (K)"], ["m", "In millions (M)"]],
   Percentage: [["auto", "Default"], ["p0", "No decimals"], ["p1", "1 decimal"], ["p2", "2 decimals"], ["ratio", "As a decimal"]],
-  Date: [["auto", "Default"], ...DATE_FORMATS.map((f) => [f, f]), ["MMM YYYY", "Month and year"]],
+  Date: [["auto", "Default"], ["MMM YYYY", "Month and year"]],
   DateTime: [["auto", "Date and time"], ["seconds", "Date and time with seconds"], ["date", "Date only"], ["time", "Time only"], ["timesec", "Time only with seconds"]],
   Boolean: [["auto", "Yes / No"], ["tf", "True / False"], ["yn", "Y / N"], ["check", "✓ / blank"]],
 };
@@ -44,6 +44,36 @@ export function formatNumber(v, s, tpl) {
   const out = (s.currency ? tpl.currency || "" : "") + t + s.suffix + (s.pct ? "%" : "");
   if (x >= 0 || /^[0.,]+$/.test(t)) return out; // nothing left after rounding: no minus sign
   return s.parens ? `(${out})` : `-${out}`;
+}
+
+/**
+ * A text value in the column's case: as written, UPPERCASE, lowercase, or Proper Case (the first letter after each
+ * space capitalised and the rest lowercase, as SSRS's StrConv ProperCase does, so the preview matches the report).
+ */
+export function textCase(v, c) {
+  const s = String(v), d = displayOf(c);
+  if (d === "upper") return s.toUpperCase();
+  if (d === "lower") return s.toLowerCase();
+  if (d === "proper") return s.toLowerCase().replace(/(^|\s)(\S)/g, (m, sp, ch) => sp + ch.toUpperCase());
+  return s;
+}
+
+/**
+ * The display options worth offering for a column: an option that would format exactly like one before it (e.g.
+ * Currency "2 decimals" while the template already uses 2) is left out. Compared by the formatting rules, not by an
+ * example value, so two options aren't merged just because one value happens to look the same in both.
+ */
+export function distinctDisplays(c, tpl) {
+  const seen = new Set();
+  return (DISPLAY_OPTIONS[c.type] || []).filter(([id]) => {
+    const col = { ...c, display: id };
+    const sig = NUMERIC.has(c.type) ? JSON.stringify(numberSpec(col, tpl))
+      : c.type === "Date" || c.type === "DateTime" ? JSON.stringify(dateSpec(col, tpl))
+      : id;
+    if (seen.has(sig)) return false;
+    seen.add(sig);
+    return true;
+  });
 }
 
 /** Labels for true and false. */

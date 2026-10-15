@@ -719,6 +719,19 @@ details.opt[open] summary {
   align-items: start
 }
 
+.tpl-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 10px
+}
+
 .tpl-preview {
   position: sticky;
   top: 72px; /* below the sticky top bar */
@@ -1280,8 +1293,7 @@ details.opt[open] summary {
   background: none;
   border: none;
   color: inherit;
-  font: inherit;
-  font-weight: 600;
+  font: inherit; /* size and weight come from the heading, so a template's heading style applies */
   padding: 0;
   cursor: pointer;
   display: inline-flex;
@@ -2145,4 +2157,168 @@ a.btn {
 /* Always keep room for the scrollbar, so short and long pages are the same width and the circles don't shift */
 html {
   scrollbar-gutter: stable
+}
+
+/* Template designer: the sample report stays in view, whole, while the settings beside it scroll */
+.tpl-canvas {
+  max-height: calc(100vh - 92px);
+  overflow: auto;
+  border-radius: 10px
+}
+
+/* Template designer: click any part of the sample report to edit it. Hover shows what a click picks;
+   the picked element keeps an outline. */
+.tpl-canvas [data-part],
+.tpl-canvas [data-type] {
+  cursor: pointer
+}
+
+.tpl-canvas [data-part]:hover,
+.tpl-canvas [data-type]:hover {
+  outline: 1px dashed #2D9CDB;
+  outline-offset: -1px
+}
+
+.tpl-canvas .is-picked,
+.tpl-canvas .is-picked:hover {
+  outline: 2px solid #2D9CDB;
+  outline-offset: -2px
+}
+
+.el-color {
+  width: 44px;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid var(--field-line);
+  border-radius: 6px;
+  background: var(--field);
+  cursor: pointer
+}
+
+.el-editor .kv {
+  grid-template-columns: 104px 1fr
+}
+
+/* Template designer layout: a toolbar across the top, the sample report, and a slim settings sidebar on the right
+   made of dropdown sections. "Hide settings" gives the report the full width. */
+.dz-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px
+}
+
+.dz-bar .inp {
+  flex: 1;
+  min-width: 200px;
+  max-width: 420px
+}
+
+.dz-toggle {
+  margin-left: auto
+}
+
+.dz-msg {
+  flex-basis: 100%;
+  margin: 0
+}
+
+.dz-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+  align-items: start
+}
+
+.dz-body.closed {
+  grid-template-columns: minmax(0, 1fr)
+}
+
+.dz-canvas,
+.dz-side {
+  position: sticky;
+  top: 72px; /* below the sticky top bar */
+  max-height: calc(100vh - 92px);
+  overflow: auto
+}
+
+.dz-canvas {
+  min-width: 0
+}
+
+.dz-tip {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--ink2)
+}
+
+.dz-side {
+  padding: 4px 16px
+}
+
+/* Dropdown sections in the sidebar */
+.acc + .acc {
+  border-top: 1px solid var(--line2)
+}
+
+.acc > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 0;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  list-style: none
+}
+
+.acc > summary::-webkit-details-marker {
+  display: none
+}
+
+.acc > summary::after {
+  content: "\25BE"; /* ▾ */
+  color: var(--ink2);
+  transition: transform .15s
+}
+
+.acc:not([open]) > summary::after {
+  transform: rotate(-90deg)
+}
+
+.acc-body {
+  padding-bottom: 14px
+}
+
+@media (max-width: 980px) {
+  .dz-body {
+    grid-template-columns: minmax(0, 1fr)
+  }
+
+  .dz-canvas,
+  .dz-side {
+    position: static;
+    max-height: none
+  }
+}
+
+/* Narrow labels in the designer's sidebar, so Row height's three buttons stay on one line */
+.dz-side .kv {
+  grid-template-columns: 84px 1fr
+}
+
+.dz-side .seg {
+  display: flex;
+  flex-wrap: nowrap;
+  min-width: 0
+}
+
+.dz-side .seg button {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: 12.5px
 }

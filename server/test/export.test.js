@@ -55,7 +55,7 @@ test("CSV has a BOM, the labels, quoted values and only the selected columns", (
   const cols = effectiveColumns(columns, DEFAULT_TPL);
   const csv = toCsv(cols, rowsOf(cols), DEFAULT_TPL);
   assert.ok(csv.startsWith("﻿Order ID,Customer,Order Date,Revenue,Is Paid\r\n"));
-  assert.match(csv, /^2,"Smith, ""Jo"" & <Co>",14 Mar 2026,"-\$1,234\.50",Yes\r$/m);
+  assert.match(csv, /^2,"Smith, ""Jo"" & <Co>",03\/14\/2026,"-\$1,234\.50",Yes\r$/m);
   assert.match(csv, /^1,Ana,,\$99\.00,No\r$/m);
   assert.doesNotMatch(csv, /secret|Secret/);
 });
@@ -154,4 +154,19 @@ test("POST /api/export returns every row, sorted, as an attachment", async () =>
     assert.equal((await post(url, { ...body, format: "csv", sql: "DELETE FROM orders" })).status, 422);
     assert.equal((await post(url, { ...body, format: "csv", connectionId: "gone" })).status, 410);
   });
+});
+
+test("every built-in style makes Excel and PDF files in that style's colours", async () => {
+  const cols = effectiveColumns(columns, DEFAULT_TPL);
+  const sheet = async (style) => unzip(await toXlsx(cols, rowsOf(cols), DEFAULT_TPL, "Orders", { style }));
+  // Ledger: navy headings; Contrast: blue headings; Clean: a navy rule under white headings. All have the title on top.
+  for (const [style, color] of [["ledger", "FF18233A"], ["contrast", "FF2D4FD6"], ["clean", "FF18233A"]]) {
+    const f = await sheet(style);
+    assert.match(f["xl/styles.xml"], new RegExp(`rgb="${color}"`), style);
+    assert.match(f["xl/worksheets/sheet1.xml"], /<t xml:space="preserve">Orders<\/t>/, style);
+    assert.match(f["xl/worksheets/sheet1.xml"], /SUBTOTAL\(109,D5:D6\)/, style); // header on row 4 under the title, run date and gap
+    assert.ok(!f["xl/media/logo.png"], style);
+    const pdf = await toPdf(cols, rowsOf(cols), DEFAULT_TPL, "Orders", { style });
+    assert.equal(pdf.subarray(0, 5).toString(), "%PDF-", style);
+  }
 });

@@ -28,6 +28,20 @@ export function exportWarnings(columns) {
 const LOGO_IMAGE = "LoanMartLogo";
 const BAND_IMAGE = "LoanMartBand";
 
+/** The template's changes to one part of the report (tpl.look, see shared/look.js), or {} */
+const lookPart = (tpl, part) => tpl.look?.[part] || {};
+
+/**
+ * A line of header text with the template's changes to its part applied. A bigger text size makes the line taller;
+ * `h` (inches) is the height at the style's own size.
+ */
+function styledLine(tpl, part, line) {
+  const o = lookPart(tpl, part);
+  const size = o.size ?? line.size;
+  const h = o.size ? Math.max(line.h, (size / 72) * 1.35 + 0.05) : line.h;
+  return { ...line, size, color: o.color ?? line.color, bold: o.bold ?? line.bold, h };
+}
+
 /**
  * LoanMart header band: a green panel as wide as the report, with the logo filling its left end (flush with the
  * band's top, bottom and left edges), then the organisation
@@ -40,10 +54,10 @@ function headerBand({ tpl, title, desc, width, nm, generated }) {
 
   // Middle column: organisation, title, description, run date
   const lines = [];
-  if (tpl.org) lines.push({ name: "OrgName", value: lit(tpl.org.toUpperCase()), h: 0.2, size: 8, bold: true, color: BRAND.gold });
-  lines.push({ name: "ReportTitle", value: lit(title || "Report"), h: 0.42, size: 20, bold: true, color: "White" });
-  if (desc) lines.push({ name: "ReportDescription", value: lit(desc), h: 0.24, size: 9.5, color: "#CFE3D6" });
-  lines.push({ name: "ReportMeta", value: generated, h: 0.22, size: 8.5, color: "#9CC3AC" });
+  if (tpl.org) lines.push(styledLine(tpl, "org", { name: "OrgName", value: lit(tpl.org.toUpperCase()), h: 0.2, size: 8, bold: true, color: BRAND.gold }));
+  lines.push(styledLine(tpl, "title", { name: "ReportTitle", value: lit(title || "Report"), h: 0.42, size: 20, bold: true, color: "White" }));
+  if (desc) lines.push(styledLine(tpl, "desc", { name: "ReportDescription", value: lit(desc), h: 0.24, size: 9.5, color: "#CFE3D6" }));
+  lines.push(styledLine(tpl, "meta", { name: "ReportMeta", value: generated, h: 0.22, size: 8.5, color: "#9CC3AC" }));
   const textH = lines.reduce((a, l) => a + l.h, 0);
   const height = Math.max(0.95, textH + pad * 2);
   const logoW = height * LOGO_SIZE.w / LOGO_SIZE.h;
@@ -63,15 +77,16 @@ function headerBand({ tpl, title, desc, width, nm, generated }) {
   }
 
   const stripe = 0.05;
+  const band = lookPart(tpl, "band");
   const xml =
     `<Rectangle Name="${nm("HeaderBand")}"><ReportItems>${items.join("")}</ReportItems><KeepTogether>true</KeepTogether>` +
     `<Top>0in</Top><Left>0in</Left><Height>${inch(height)}</Height><Width>${inch(width)}</Width>` +
-    `<Style><Border><Style>None</Style></Border><BackgroundColor>${BRAND.green}</BackgroundColor>` +
-    `<BackgroundGradientType>LeftRight</BackgroundGradientType><BackgroundGradientEndColor>${BRAND.greenDeep}</BackgroundGradientEndColor>` +
+    `<Style><Border><Style>None</Style></Border><BackgroundColor>${band.bg || BRAND.green}</BackgroundColor>` +
+    `<BackgroundGradientType>LeftRight</BackgroundGradientType><BackgroundGradientEndColor>${band.bg || BRAND.greenDeep}</BackgroundGradientEndColor>` +
     `<BackgroundImage><Source>Embedded</Source><Value>${BAND_IMAGE}</Value><BackgroundRepeat>Clip</BackgroundRepeat></BackgroundImage></Style></Rectangle>` +
     `<Rectangle Name="${nm("GoldStripe")}"><Top>${inch(height)}</Top><Left>0in</Left><Height>${inch(stripe)}</Height><Width>${inch(width)}</Width>` +
-    `<Style><Border><Style>None</Style></Border><BackgroundColor>${BRAND.gold}</BackgroundColor></Style></Rectangle>`;
-  return { xml, height: height + stripe, image: bandBackgroundPng(width, height) };
+    `<Style><Border><Style>None</Style></Border><BackgroundColor>${band.stripe || BRAND.gold}</BackgroundColor></Style></Rectangle>`;
+  return { xml, height: height + stripe, image: bandBackgroundPng(width, height, 96, band.bg) };
 }
 
 /**
@@ -106,8 +121,11 @@ export function buildRdl({ sql, columns, effCols, tpl, title, desc, filters, col
   const footW = Math.min(usable, sectionW);
 
   const align = (c) => ({ left: "Left", right: "Right", center: "Center" })[alignOf(c)];
-  const zebra = tpl.zebra ? `=IIF(RowNumber(Nothing) Mod 2 = 0, "${th.zebra}", "White")` : null;
-  const rowLine = { color: th.rowLine || "#E6EAF0", width: "0.75pt" };
+  // The template's changes to the table (tpl.look), over the style's own colours and the row height's text size
+  const lh = lookPart(tpl, "head"), lr = lookPart(tpl, "rows"), lt = lookPart(tpl, "totals");
+  const zebra = tpl.zebra ? `=IIF(RowNumber(Nothing) Mod 2 = 0, "${lr.zebra || th.zebra}", "White")` : null;
+  const rowLine = { color: lr.line || th.rowLine || "#E6EAF0", width: "0.75pt" };
+  const rowSize = lr.size ?? dn.size;
 
   // ----- totals
   const totals = tpl.totals
@@ -121,26 +139,29 @@ export function buildRdl({ sql, columns, effCols, tpl, title, desc, filters, col
   const headCells = tcols.map((t) => textbox({
     name: nm(t.rn ? "hdr_RowNum" : `hdr_${fieldOf[t.c.key]}`),
     value: t.rn ? "#" : lit(t.c.label),
-    bold: true, size: dn.size, color: th.headColor, bg: th.headBg,
+    bold: lh.bold ?? true, size: lh.size ?? dn.size, color: lh.color || th.headColor, bg: lh.bg || th.headBg,
     bottom: th.headBorder ? { color: th.headBorder, width: "2pt" } : null,
     align: t.rn ? "Right" : align(t.c), pad: dn.pad, valign: "Bottom",
     userSort: t.rn ? null : `=Fields!${fieldOf[t.c.key]}.Value`,
   }));
 
   const detailCells = tcols.map((t) => {
-    if (t.rn) return textbox({ name: nm("RowNum"), value: "=RowNumber(Nothing)", size: dn.size, color: "#7A859A", align: "Right", pad: dn.pad, bg: zebra, bottom: rowLine, valign: "Top" });
+    if (t.rn) return textbox({ name: nm("RowNum"), value: "=RowNumber(Nothing)", size: rowSize, color: "#7A859A", align: "Right", pad: dn.pad, bg: zebra, bottom: rowLine, valign: "Top" });
     const c = t.c, F = fieldOf[c.key];
     // Yes/No labels and text case follow the column's display option; numbers and dates use the format string
     const [yes, no] = c.type === "Boolean" ? booleanLabels(c) : [];
-    const textCase = c.type === "Text" ? { upper: "UCase", lower: "LCase" }[displayOf(c)] : null;
+    const textCase = c.type === "Text" ? {
+      upper: `UCase(Fields!${F}.Value)`, lower: `LCase(Fields!${F}.Value)`, proper: `StrConv(Fields!${F}.Value, VbStrConv.ProperCase)`,
+    }[displayOf(c)] : null;
     const value = c.type === "Boolean"
       ? `=IIF(IsNothing(Fields!${F}.Value), "", IIF(CBool(Fields!${F}.Value), ${vbStr(yes)}, ${vbStr(no)}))`
-      : textCase ? `=${textCase}(Fields!${F}.Value)` : `=Fields!${F}.Value`;
-    return textbox({ name: nm(`val_${F}`), value, fmt: netFormat(c, tpl), size: dn.size, color: th.ink, align: align(c), pad: dn.pad, bg: zebra, bottom: rowLine, valign: "Top" });
+      : textCase ? `=${textCase}` : `=Fields!${F}.Value`;
+    // Colour and bold: the column's data type (tpl.types), then the rows' colour
+    return textbox({ name: nm(`val_${F}`), value, fmt: netFormat(c, tpl), size: rowSize, color: c.color || lr.color || th.ink, bold: c.bold, align: align(c), pad: dn.pad, bg: zebra, bottom: rowLine, valign: "Top" });
   });
 
   const totalCells = tcols.map((t, i) => {
-    const base = { size: dn.size, bold: true, color: th.ink, pad: dn.pad, bg: th.totalBg || "#EEF1F6", top: { color: th.totalLine || "#18233A", width: "1.5pt" } };
+    const base = { size: rowSize, bold: true, color: lt.color || th.ink, pad: dn.pad, bg: lt.bg || th.totalBg || "#EEF1F6", top: { color: lt.line || th.totalLine || "#18233A", width: "1.5pt" } };
     if (!t.rn && totals[t.c.key]) {
       const F = fieldOf[t.c.key];
       return textbox({ ...base, name: nm(`tot_${F}`), value: `=${totals[t.c.key]}(Fields!${F}.Value)`, fmt: netFormat(t.c, tpl), align: align(t.c) });
@@ -156,9 +177,12 @@ export function buildRdl({ sql, columns, effCols, tpl, title, desc, filters, col
   let y = 0;
   const head = [];
   let bandImage = "";
-  const block = (name, value, height, extra = {}) => {
-    head.push(textbox({ name: nm(name), value, pad: 2, pos: { top: y, left: 0, height, width: headerW }, ...extra }));
-    y += height + 0.03;
+  // part: the tpl.look part the line belongs to, if the template can restyle it
+  const block = (name, value, height, extra = {}, part = null) => {
+    const l = part ? styledLine(tpl, part, { h: height, ...extra }) : { h: height, ...extra };
+    const { h, ...style } = l;
+    head.push(textbox({ name: nm(name), value, pad: 2, pos: { top: y, left: 0, height: h, width: headerW }, ...style }));
+    y += h + 0.03;
   };
   // "Generated 11 Oct 2026  ·  5 columns  ·  1,234 rows", the row count worked out by SSRS over every row
   const columnsText = `${effCols.length} ${effCols.length === 1 ? "column" : "columns"}`;
@@ -172,14 +196,14 @@ export function buildRdl({ sql, columns, effCols, tpl, title, desc, filters, col
     if (fl.summary.length) block("FilterSummary", lit("Filters: " + fl.summary.join("; ")), 0.24, { size: 9, bold: true, color: BRAND.green });
     if (sl.summary) block("SlicerSummary", sl.summary, 0.24, { size: 9, color: BRAND.ink });
   } else {
-    if (tpl.org) block("OrgName", lit(tpl.org), 0.25, { size: 10, bold: true, color: "#4A566E" });
-    block("ReportTitle", lit(title || "Report"), 0.42, { size: 18, bold: true, color: "#18233A", left: tpl.theme === "contrast" ? { color: "#2D4FD6", width: "4pt" } : null });
-    if (desc) block("ReportDescription", lit(desc), 0.26, { size: 10, color: "#4A566E" });
+    if (tpl.org) block("OrgName", lit(tpl.org), 0.25, { size: 10, bold: true, color: "#4A566E" }, "org");
+    block("ReportTitle", lit(title || "Report"), 0.42, { size: 18, bold: true, color: "#18233A", left: tpl.theme === "contrast" ? { color: "#2D4FD6", width: "4pt" } : null }, "title");
+    if (desc) block("ReportDescription", lit(desc), 0.26, { size: 10, color: "#4A566E" }, "desc");
     if (fl.summary.length) block("FilterSummary", lit("Filters: " + fl.summary.join("; ")), 0.24, { size: 9, color: "#2340B0" });
     if (sl.summary) block("SlicerSummary", sl.summary, 0.24, { size: 9, color: "#4A566E" });
     block("ReportMeta",
       generated,
-      0.26, { size: 9, color: "#7A859A", bottom: tpl.theme === "ledger" ? { color: "#18233A", width: "2.25pt" } : null });
+      0.26, { size: 9, color: "#7A859A", bottom: tpl.theme === "ledger" ? { color: "#18233A", width: "2.25pt" } : null }, "meta");
   }
   y += 0.12;
 
@@ -211,8 +235,9 @@ ${hasTotals ? "<TablixMember><KeepWithGroup>Before</KeepWithGroup></TablixMember
   const bodyH = y + tablixH + 0.1;
 
   // ----- page
-  const footer = `<PageFooter><Height>0.35in</Height><PrintOnFirstPage>true</PrintOnFirstPage><PrintOnLastPage>true</PrintOnLastPage><ReportItems>
-${tpl.footer ? textbox({ name: nm("FooterNote"), value: lit(tpl.footer), size: 8, color: "#4A566E", pad: 2, pos: { top: 0.08, left: 0, height: 0.22, width: Math.max(footW - 1.7, 1) } }) : ""}
+  const fn = styledLine(tpl, "footer", { h: 0.22, size: 8, color: "#4A566E" });
+  const footer = `<PageFooter><Height>${inch(Math.max(0.35, fn.h + 0.13))}</Height><PrintOnFirstPage>true</PrintOnFirstPage><PrintOnLastPage>true</PrintOnLastPage><ReportItems>
+${tpl.footer ? textbox({ name: nm("FooterNote"), value: lit(tpl.footer), size: fn.size, color: fn.color, bold: fn.bold, pad: 2, pos: { top: 0.08, left: 0, height: fn.h, width: Math.max(footW - 1.7, 1) } }) : ""}
 ${textbox({ name: nm("PageNumber"), value: `="Page " & Globals!PageNumber & " of " & Globals!TotalPages`, size: 8, color: "#7A859A", align: "Right", pad: 2, pos: { top: 0.08, left: Math.max(footW - 1.6, 0), height: 0.22, width: 1.6 } })}
 </ReportItems><Style><Border><Style>None</Style></Border></Style></PageFooter>`;
   const page = `<Page>${footer}<PageHeight>${inch(pageH)}</PageHeight><PageWidth>${inch(pageW)}</PageWidth><LeftMargin>0.5in</LeftMargin><RightMargin>0.5in</RightMargin><TopMargin>0.5in</TopMargin><BottomMargin>0.5in</BottomMargin><Style /></Page>`;

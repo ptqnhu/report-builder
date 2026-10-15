@@ -1,7 +1,7 @@
 import { NUMERIC } from "./constants.js";
 import { pad } from "./text.js";
 import { parseLocalDate, fmtDate } from "./dates.js";
-import { numberSpec, formatNumber, booleanLabels, dateSpec, displayOf } from "./display.js";
+import { numberSpec, formatNumber, booleanLabels, dateSpec, textCase } from "./display.js";
 
 /** Converts a raw value (from CSV or sample data) into the JS value for a type, or null. */
 export function coerce(v, type) {
@@ -42,8 +42,7 @@ export function formatValue(v, col, tpl) {
     return [s.date && fmtDate(v, s.date), time].filter(Boolean).join(" ");
   }
   if (col.type === "Boolean") return booleanLabels(col)[v ? 0 : 1];
-  const d = displayOf(col);
-  return d === "upper" ? String(v).toUpperCase() : d === "lower" ? String(v).toLowerCase() : String(v);
+  return textCase(v, col);
 }
 
 /** Sorts rows (objects keyed by column key) by one column; empty values go last. */

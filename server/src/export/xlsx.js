@@ -1,7 +1,8 @@
 import {
-  NUMERIC, BRAND, LOANMART_LOGO_PNG, LOGO_SIZE, formatValue, numberSpec, dateSpec, booleanLabels, displayOf, idLike, fmtDate,
+  NUMERIC, BRAND, LOANMART_LOGO_PNG, LOGO_SIZE, formatValue, numberSpec, dateSpec, booleanLabels, textCase, idLike, fmtDate,
 } from "@report-builder/shared";
 import { zip } from "./zip.js";
+import { tablePalette } from "./palette.js";
 
 const EXCEL_DATE = { "D MMM YYYY": "d mmm yyyy", "YYYY-MM-DD": "yyyy-mm-dd", "MM/DD/YYYY": "mm/dd/yyyy", "DD/MM/YYYY": "dd/mm/yyyy", "MMM YYYY": "mmm yyyy" };
 const quoted = (s) => (s ? `"${s.replace(/"/g, "")}"` : "");
@@ -116,10 +117,7 @@ function dataCell(v, c, ref, style) {
   }
   let text;
   if (c.type === "Boolean") text = booleanLabels(c)[v ? 0 : 1];
-  else {
-    const d = displayOf(c);
-    text = d === "upper" ? String(v).toUpperCase() : d === "lower" ? String(v).toLowerCase() : String(v);
-  }
+  else text = textCase(v, c);
   return textCell(ref, text, style);
 }
 
@@ -151,10 +149,11 @@ const DEFAULT_COL_PX = 64; // a column of Excel's default width
 /**
  * The sheet layout. Plain: the header row, then the data. LoanMart (the SSRS template's look): a green band with the
  * logo, organisation, title and run date across every column, a gold stripe, a green header row, shaded alternate rows
- * and a totals row. Either style ends with a totals row (SUBTOTAL formulas, so they follow Excel's filters) when
- * tpl.totals is on.
+ * and a totals row. Ledger, Clean and Contrast: the title and run date, then the table in that style's colours.
+ * Every style ends with a totals row (SUBTOTAL formulas, so they follow Excel's filters) when tpl.totals is on.
  */
-function layout(cols, rows, tpl, title, branded) {
+function layout(cols, rows, tpl, title, style) {
+  const branded = style === "loanmart";
   const st = new Styles();
   const widths = cols.map((c) => widthOf(c, rows, tpl));
   const fmts = cols.map((c) => excelFormat(c, tpl));
@@ -165,6 +164,28 @@ function layout(cols, rows, tpl, title, branded) {
 
   const totals = tpl.totals ? totalsOf(cols, rows) : {};
   const totalsRow = (style) => (Object.keys(totals).length ? { values: totals, styles: fmts.map(style) } : null);
+
+  // Right-aligned headings are indented so the filter button doesn't cover their last letters.
+  const headAlign = (c) => (NUMERIC.has(c.type) ? { h: "right", v: "center", indent: 2 } : { h: c.type === "Boolean" ? "center" : "left", v: "center" });
+
+  if (!branded && style !== "plain") {
+    const P = tablePalette(style);
+    top.push({ height: 27, cells: [textCell("A1", title || "Report", st.add({ font: { b: true, sz: 16, color: P.ink }, align: { v: "center" } }))] });
+    top.push({ height: 16.5, cells: [textCell("A2", metaLine(cols, rows, tpl), st.add({ font: { sz: 8.5, color: "#7A859A" }, align: { v: "top" } }))] });
+    top.push({ height: 8, cells: [] });
+    const line = { style: "thin", color: P.rowLine };
+    return {
+      st, widths, top, merges, span, showGrid: false,
+      head: cols.map((c) => st.add({
+        font: { b: true, color: P.headColor }, fill: P.headBg || undefined,
+        border: P.headLine ? { bottom: { style: "medium", color: P.headLine } } : undefined, align: headAlign(c),
+      })),
+      body: [false, true].map((zebra) => fmts.map((f, i) => st.add({
+        font: { color: P.ink }, fill: zebra && tpl.zebra ? P.zebra : undefined, border: { bottom: line }, numFmt: f, align: align(cols[i]),
+      }))),
+      totals: totalsRow((f) => st.add({ font: { b: true, color: P.ink }, fill: P.totalBg || undefined, border: { top: { style: "medium", color: P.totalLine } }, numFmt: f })),
+    };
+  }
 
   if (!branded) {
     const head = st.add({ font: { b: true } });
@@ -206,11 +227,7 @@ function layout(cols, rows, tpl, title, branded) {
   const body = [false, true].map((zebra) => fmts.map((f, i) => st.add({
     font: { color: BRAND.ink }, fill: zebra && tpl.zebra ? BRAND.greenTint : undefined, border: { bottom: line }, numFmt: f, align: align(cols[i]),
   })));
-  // Right-aligned headings are indented so the filter button doesn't cover their last letters.
-  const head = cols.map((c) => st.add({
-    font: { b: true, color: "#FFFFFF" }, fill: BRAND.green,
-    align: NUMERIC.has(c.type) ? { h: "right", v: "center", indent: 2 } : { h: c.type === "Boolean" ? "center" : "left", v: "center" },
-  }));
+  const head = cols.map((c) => st.add({ font: { b: true, color: "#FFFFFF" }, fill: BRAND.green, align: headAlign(c) }));
   const totalStyle = (f) => st.add({ font: { b: true, color: BRAND.ink }, fill: "#E2EEE6", border: { top: { style: "medium", color: BRAND.green } }, numFmt: f });
 
   return {
@@ -286,10 +303,10 @@ const sheetName = (s) => String(s || "").replace(/[[\]:*?/\\]/g, " ").trim().sli
 /**
  * Rows as an .xlsx workbook with one sheet; the header row is frozen and has filter buttons. Numbers and dates are
  * written as real values with a number format matching the column's display choice; booleans and text as the shown
- * text. style: "plain" or "loanmart" (see layout()).
+ * text. style: one of FILE_STYLES (see layout()).
  */
 export async function toXlsx(cols, rows, tpl, title, { style = "plain" } = {}) {
-  const L = layout(cols, rows, tpl, title, style === "loanmart");
+  const L = layout(cols, rows, tpl, title, style);
   const headRow = L.top.length + 1;
   const name = sheetName(title);
   const ref = (a, b) => `'${xesc(name.replace(/'/g, "''"))}'!${a}:${b}`;

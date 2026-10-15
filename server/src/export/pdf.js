@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import { metaLine } from "./xlsx.js";
+import { tablePalette } from "./palette.js";
 import { NUMERIC, BRAND, LOANMART_LOGO_PNG, LOGO_SIZE, formatValue, alignOf, idLike, fmtDate } from "@report-builder/shared";
 
 const PAGE = { size: "LETTER", layout: "landscape", margin: 30 };
@@ -32,12 +33,13 @@ function fit(doc, text, width) {
 /**
  * Rows as a landscape Letter PDF that fits the page width; the column headings repeat on every page, and each page
  * has the title and "Page n of N" at the bottom. style "loanmart" adds the LoanMart template's look (green band with
- * the logo, gold stripe, green headings and shaded rows); "plain" is a simple title and table. Either ends with a
- * totals row when tpl.totals is on.
+ * the logo, gold stripe, green headings and shaded rows); "ledger", "clean" and "contrast" are a title and a table in
+ * that style's colours; "plain" is a simple title and table. Every style ends with a totals row when tpl.totals is on.
  * Text is drawn in Helvetica, so characters outside Windows-1252 (e.g. CJK) don't show.
  */
 export function toPdf(cols, rows, tpl, title, { style = "plain" } = {}) {
   const branded = style === "loanmart";
+  const P = tablePalette(style);
   const doc = new PDFDocument({ ...PAGE, bufferPages: true, info: { Title: title || "Report", Creator: "Report builder" } });
   const chunks = [];
   doc.on("data", (b) => chunks.push(b));
@@ -75,9 +77,9 @@ export function toPdf(cols, rows, tpl, title, { style = "plain" } = {}) {
 
   function heading(y) {
     const h = rowH + 2;
-    if (branded) doc.rect(left, y, width, h).fill(BRAND.green);
-    cols.forEach((c, i) => cell(c.label, i, y, h, { bold: true, color: branded ? "#FFFFFF" : PLAIN.ink }));
-    if (!branded) doc.moveTo(left, y + h).lineTo(left + width, y + h).lineWidth(1).stroke(PLAIN.headLine);
+    if (P.headBg) doc.rect(left, y, width, h).fill(P.headBg);
+    cols.forEach((c, i) => cell(c.label, i, y, h, { bold: true, color: P.headColor }));
+    if (P.headLine) doc.moveTo(left, y + h).lineTo(left + width, y + h).lineWidth(style === "plain" ? 1 : 2).stroke(P.headLine);
     return y + h;
   }
 
@@ -106,9 +108,13 @@ export function toPdf(cols, rows, tpl, title, { style = "plain" } = {}) {
     doc.rect(left, y + h, width, 3).fill(BRAND.gold);
     y += h + 3 + 10;
   } else {
+    // Contrast marks the title with a blue bar at its left; Ledger rules a line under the header, as in the report
+    const tx = style === "contrast" ? left + 10 : left;
+    if (style === "contrast") doc.rect(left, y, 4, 32).fill("#2D4FD6");
     doc.font("Helvetica-Bold").fontSize(16).fillColor(PLAIN.ink);
-    doc.text(fit(doc, title || "Report", width), left, y, { width, lineBreak: false });
-    doc.font("Helvetica").fontSize(8).fillColor(PLAIN.muted).text(generated, left, y + 21, { width, lineBreak: false });
+    doc.text(fit(doc, title || "Report", width), tx, y, { width: width - (tx - left), lineBreak: false });
+    doc.font("Helvetica").fontSize(8).fillColor(PLAIN.muted).text(generated, tx, y + 21, { width: width - (tx - left), lineBreak: false });
+    if (style === "ledger") doc.moveTo(left, y + 35).lineTo(left + width, y + 35).lineWidth(2).stroke(PLAIN.ink);
     y += 40;
   }
 
@@ -116,9 +122,9 @@ export function toPdf(cols, rows, tpl, title, { style = "plain" } = {}) {
   y = heading(y);
   for (let n = 0; n < rows.length; n++) {
     if (y + rowH > bottom) { doc.addPage(); y = heading(PAGE.margin); }
-    if (branded && tpl.zebra && n % 2 === 1) doc.rect(left, y, width, rowH).fill(BRAND.greenTint);
-    cols.forEach((c, i) => cell(text[i][n], i, y, rowH, { color: branded ? BRAND.ink : PLAIN.ink }));
-    doc.moveTo(left, y + rowH).lineTo(left + width, y + rowH).lineWidth(0.5).stroke(branded ? BRAND.greenLine : PLAIN.line);
+    if (P.zebra && tpl.zebra && n % 2 === 1) doc.rect(left, y, width, rowH).fill(P.zebra);
+    cols.forEach((c, i) => cell(text[i][n], i, y, rowH, { color: P.ink }));
+    doc.moveTo(left, y + rowH).lineTo(left + width, y + rowH).lineWidth(0.5).stroke(P.rowLine);
     y += rowH;
   }
   if (!rows.length) {
@@ -127,9 +133,9 @@ export function toPdf(cols, rows, tpl, title, { style = "plain" } = {}) {
   if (hasTotals) {
     if (y + rowH + 2 > bottom) { doc.addPage(); y = heading(PAGE.margin); }
     const h = rowH + 2, label = cols.findIndex((c) => totals[c.key] === undefined);
-    const ink = branded ? BRAND.ink : PLAIN.ink;
-    if (branded) doc.rect(left, y, width, h).fill("#E2EEE6");
-    doc.moveTo(left, y).lineTo(left + width, y).lineWidth(branded ? 1.5 : 1).stroke(branded ? BRAND.green : PLAIN.headLine);
+    const ink = P.ink;
+    if (P.totalBg) doc.rect(left, y, width, h).fill(P.totalBg);
+    doc.moveTo(left, y).lineTo(left + width, y).lineWidth(P.totalBg ? 1.5 : 1).stroke(P.totalLine);
     cols.forEach((c, i) => {
       const v = totals[c.key];
       if (v !== undefined) cell(formatValue(v, c, tpl), i, y, h, { bold: true, color: ink });

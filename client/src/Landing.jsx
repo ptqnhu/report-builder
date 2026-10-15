@@ -40,7 +40,7 @@ const FEATURES = [
   { icon: "layers", title: "Reusable templates", text: "Design a template once on sample data, save it, and apply it to any report: layout, style, header, footer and formats."},
   { icon: "shield", title: "Read-only by design", text: "Only SELECT queries are allowed, previews run in a transaction that is always rolled back, and passwords are never stored." },
   { icon: "monitor", title: "No login on this computer", text: "A SQL Server on your own machine opens with your Windows account. No user name or password to type." },
-  { icon: "filter", title: "Filters and sort carried over", text: "The filters and sort order you set in the preview are written into the .rdl file, so the report opens the same way." },
+  { icon: "filter", title: "Filters and sort carried over", text: "The readers' filters and the sort order you set in the preview are written into the .rdl file, so the report opens the same way." },
 ];
 
 const WORKS_WITH = [
@@ -330,7 +330,7 @@ export default function Landing({ onStart }) {
           </div>
           <div className="lp-field">
             <span>Formats</span>
-            <code>$ · 2 decimals · 14 Mar 2026</code>
+            <code>$ · 2 decimals · 03/14/2026</code>
           </div>
           <div className="lp-field">
             <span>Header and footer</span>

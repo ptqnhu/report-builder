@@ -76,12 +76,13 @@ function chunk(type, data) {
  * SSRS draws background images at 96 pixels per inch (it ignores the PNG's own resolution), so it is made at 96
  * to come out at exactly the band's size.
  */
-export function bandBackgroundPng(widthIn, heightIn, dpi = 96) {
+export function bandBackgroundPng(widthIn, heightIn, dpi = 96, color = null) {
   const W = Math.max(1, Math.round(widthIn * dpi)), H = Math.max(1, Math.round(heightIn * dpi));
   const k = BAND_LINES_SIZE.h / H; // drawing units per pixel
   const artLeft = W * BAND_LINES_RIGHT - BAND_LINES_SIZE.w / k; // in pixels
   const half = BAND_LINES_STROKE.width / 2;
-  const [g0, g1, ink] = [rgb(BRAND.green), rgb(BRAND.greenDeep), rgb(BAND_LINES_STROKE.color)];
+  // A template's own band colour (tpl.look.band.bg) fills the band evenly; otherwise the brand gradient
+  const [g0, g1, ink] = [rgb(color || BRAND.green), rgb(color || BRAND.greenDeep), rgb(BAND_LINES_STROKE.color)];
 
   const raw = Buffer.alloc((W * 3 + 1) * H);
   for (let y = 0; y < H; y++) {

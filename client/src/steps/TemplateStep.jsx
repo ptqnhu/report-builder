@@ -1,20 +1,16 @@
 import { useState } from "react";
-import { DEFAULT_TPL, templateStyle } from "@report-builder/shared";
+import { templateStyle } from "@report-builder/shared";
 import TypeBadge from "../components/TypeBadge.jsx";
 import ReportDocument from "../components/ReportDocument.jsx";
 import TemplateSettings from "../components/TemplateSettings.jsx";
 import { useTemplates } from "../hooks/useTemplates.js";
 
-const DEFAULT_NAME = "LoanMart (default)";
-
 export default function TemplateStep({ tpl, setTpl, effCols, previewProps }) {
-  const { templates, message, setMessage } = useTemplates();
-  const [chosen, setChosen] = useState(tpl.name || "");
+  const { templates, message } = useTemplates(); // message: only set when the saved templates fail to load
   // Column settings show one column at a time, picked from a dropdown
   const [editKey, setEditKey] = useState(null);
   const editIdx = Math.max(0, effCols.findIndex((c) => c.key === editKey));
   const ec = effCols[editIdx];
-  const saved = templates.find((s) => s.name === chosen);
 
   const patch = (p) => setTpl((t) => ({ ...t, ...p }));
   const patchCol = (name, p) => setTpl((t) => ({ ...t, cols: { ...t.cols, [name]: { ...(t.cols[name] || {}), ...p } } }));
@@ -26,35 +22,24 @@ export default function TemplateStep({ tpl, setTpl, effCols, previewProps }) {
     setTpl((t) => ({ ...t, order: [...names, ...t.order.filter((n) => !names.includes(n))] }));
   }
 
-  /** Applies a template's look to this report. The report's own column settings stay as they are. */
-  function apply(found) {
-    setTpl((t) => ({ ...t, ...templateStyle(found), name: found.name }));
-    setChosen(found.name);
-    setMessage(`Applied “${found.name || DEFAULT_NAME}”.`);
-  }
+  /** A saved template picked as the style: its whole look applies. The report's own column settings stay. */
+  const applyTemplate = (found) => setTpl((t) => ({ ...t, ...templateStyle(found), name: found.name }));
 
   return (
     <div className="tpl-grid">
-      <div className="panel">
-        <div className="group">
-          <h3>Templates</h3>
-          <div className="row" style={{ marginBottom: 10 }}>
-            <select className="sel" style={{ flex: 1, minWidth: 160 }} value={chosen} onChange={(e) => setChosen(e.target.value)} aria-label="Template">
-              <option value="">{DEFAULT_NAME}</option>
-              {templates.map((s) => <option key={s.name} value={s.name}>{s.name}</option>)}
-            </select>
-            <button className="btn btn-sm" onClick={() => apply(saved || DEFAULT_TPL)}>Apply</button>
-          </div>
-          <p className="fld-hint">
-            {message || "Changes below apply to this report only."}{" "}
-            <a href="#/templates">Create or edit templates</a> in the template designer.
+      {/* Left column: the look, then this report's own column settings in a panel of their own */}
+      <div className="tpl-side">
+        <div className="panel">
+          {/* Saved templates are offered in the Style list next to the built-in styles. Column layout, header and
+              footer come from the style or template; they're set in the template designer */}
+          <TemplateSettings tpl={tpl} patch={patch} sections={["look"]} templates={templates} onTemplate={applyTemplate} />
+          <p className="fld-hint" style={{ marginTop: 10 }}>
+            {message ? `${message} ` : ""}Your own styles come from the <a href="#/templates">template designer</a>. Changes here apply to this report only.
           </p>
         </div>
 
-        <TemplateSettings tpl={tpl} patch={patch} />
-
-        <div className="group">
-          <h3>Columns ({effCols.length})</h3>
+        <div className="panel">
+          <h3 className="panel-title">Columns ({effCols.length})</h3>
           {ec && (
             <>
               <select className="sel colset-pick" value={ec.key} onChange={(e) => setEditKey(e.target.value)} aria-label="Column to edit">

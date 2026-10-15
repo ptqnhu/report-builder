@@ -13,9 +13,15 @@ export function effectiveColumns(columns, tpl) {
     ...tpl.order.filter((n) => byName.has(n)).map((n) => byName.get(n)),
     ...sel.filter((c) => !tpl.order.includes(c.name)),
   ];
+  // A column's own settings come first, then its data type's (tpl.types), then the defaults
+  const set = (v) => (v && v !== "auto" ? v : null);
   return ordered.map((c) => {
     const s = tpl.cols[c.name] || {};
-    return { ...c, label: s.label || prettify(c.name), align: s.align || "auto", width: s.width || "auto", wrap: !!s.wrap, display: s.display || "auto" };
+    const t = tpl.types?.[c.type] || {};
+    return {
+      ...c, label: s.label || prettify(c.name), align: set(s.align) || t.align || "auto", width: s.width || "auto", wrap: !!s.wrap,
+      display: set(s.display) || t.display || "auto", color: t.color || null, bold: !!t.bold,
+    };
   });
 }
 

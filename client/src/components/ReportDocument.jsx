@@ -1,6 +1,7 @@
 import { filterActive, describeFilter, fmtDate, LOANMART_LOGO_PNG, BAND_LINES_SIZE, BAND_LINES_RIGHT, BAND_LINES_PATHS, BAND_LINES_STROKE } from "@report-builder/shared";
 import ReportTable from "./ReportTable.jsx";
 import PreviewNote from "./PreviewNote.jsx";
+import { textStyle, part } from "../utils/look.js";
 
 const LOGO_SRC = `data:image/png;base64,${LOANMART_LOGO_PNG}`;
 
@@ -24,15 +25,17 @@ function BandLines() {
 const rowCount = (n, more) => `${n.toLocaleString("en-US")}${more ? "+" : ""} ${n === 1 && !more ? "row" : "rows"}`;
 
 function Band({ cols, count, tpl, title, desc, loading }) {
+  const band = part(tpl, "band");
   return (
-    <header className={`doc-band${tpl.logo ? " has-logo" : ""}`}>
+    <header className={`doc-band${tpl.logo ? " has-logo" : ""}`} data-part="band"
+      style={{ ...(band.bg && { background: band.bg }), ...(band.stripe && { borderBottomColor: band.stripe }) }}>
       <BandLines />
       {tpl.logo && <img className="doc-logo" src={LOGO_SRC} alt="LoanMart" />}
       <div className="doc-band-main">
-        {tpl.org && <p className="doc-org">{tpl.org}</p>}
-        <h2 className={`doc-title ${title ? "" : "placeholder"}`}>{title || "Report title"}</h2>
-        {desc && <p className="doc-desc">{desc}</p>}
-        <p className="doc-meta">
+        {tpl.org && <p className="doc-org" data-part="org" style={textStyle(part(tpl, "org"))}>{tpl.org}</p>}
+        <h2 className={`doc-title ${title ? "" : "placeholder"}`} data-part="title" style={textStyle(part(tpl, "title"))}>{title || "Report title"}</h2>
+        {desc && <p className="doc-desc" data-part="desc" style={textStyle(part(tpl, "desc"))}>{desc}</p>}
+        <p className="doc-meta" data-part="meta" style={textStyle(part(tpl, "meta"))}>
           <span>Generated {fmtDate(new Date(), tpl.dateFormat)}</span>
           <span>{cols.length} {cols.length === 1 ? "column" : "columns"}</span>
           <span>{count}</span>
@@ -71,10 +74,10 @@ export default function ReportDocument({ cols, rows, totalRows, tpl, title, desc
         </>
       ) : (
         <header className="doc-head">
-          {tpl.org && <p className="doc-org">{tpl.org}</p>}
-          <h2 className={`doc-title ${title ? "" : "placeholder"}`}>{title || "Report title"}</h2>
-          {desc && <p className="doc-desc">{desc}</p>}
-          <p className="doc-meta">
+          {tpl.org && <p className="doc-org" data-part="org" style={textStyle(part(tpl, "org"))}>{tpl.org}</p>}
+          <h2 className={`doc-title ${title ? "" : "placeholder"}`} data-part="title" style={textStyle(part(tpl, "title"))}>{title || "Report title"}</h2>
+          {desc && <p className="doc-desc" data-part="desc" style={textStyle(part(tpl, "desc"))}>{desc}</p>}
+          <p className="doc-meta" data-part="meta" style={textStyle(part(tpl, "meta"))}>
             <span>Generated {fmtDate(new Date(), tpl.dateFormat)}</span>
             <span>{cols.length} {cols.length === 1 ? "column" : "columns"}</span>
             <span>{count}</span>
@@ -85,7 +88,7 @@ export default function ReportDocument({ cols, rows, totalRows, tpl, title, desc
         </header>
       )}
       <ReportTable cols={cols} rows={rows} tpl={tpl} sort={sort} onSort={onSort} onMove={onMove} limit={limit} />
-      {tpl.footer && <footer className="doc-foot">{tpl.footer}</footer>}
+      {tpl.footer && <footer className="doc-foot" data-part="footer" style={textStyle(part(tpl, "footer"))}>{tpl.footer}</footer>}
     </article>
     {limit && <PreviewNote rows={rows} limit={limit} totalRows={totalRows} moreRows={moreRows} rowTotal={rowTotal} counting={counting} />}
     </>

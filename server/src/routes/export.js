@@ -8,6 +8,7 @@ import { previewQuery } from "../services/db/preview.js";
 import { toCsv } from "../export/csv.js";
 import { toXlsx } from "../export/xlsx.js";
 import { toPdf } from "../export/pdf.js";
+import { FILE_STYLES } from "../export/palette.js";
 
 const FORMATS = {
   csv: { ext: ".csv", type: "text/csv; charset=utf-8" },
@@ -16,10 +17,11 @@ const FORMATS = {
 };
 
 /**
- * POST /api/export { connectionId, sql, columns, tpl, sort, title, format: "csv" | "xlsx" | "pdf", style: "plain" | "loanmart" }
+ * POST /api/export { connectionId, sql, columns, tpl, sort, title, format: "csv" | "xlsx" | "pdf", style: one of FILE_STYLES }
  *   -> the file as an attachment, with every row the query returns (up to EXPORT_ROW_LIMIT, or PDF_ROW_LIMIT for PDFs).
  * Headers: X-Export-Rows (rows written), X-Export-Truncated ("1" when the limit cut the export short).
- * `style` applies to Excel and PDF: "loanmart" adds the LoanMart template's band, colours and totals row.
+ * `style` applies to Excel and PDF: "loanmart" adds the LoanMart template's band; "ledger", "clean" and "contrast" use
+ * those report styles' colours; "plain" is a simple table (export/palette.js).
  * `columns` is the full list from /analyze in query order; unselected ones are left out of the file.
  */
 export default function exportRoutes(connections) {
@@ -48,7 +50,7 @@ export default function exportRoutes(connections) {
       result.rows.map((arr) => Object.fromEntries(columns.map((c, i) => [c.key, coerce(arr[i], c.type)]))),
       sort, colsByKey);
 
-    const style = b.style === "loanmart" ? "loanmart" : "plain";
+    const style = FILE_STYLES.includes(b.style) ? b.style : "plain";
     const body = b.format === "csv" ? toCsv(cols, rows, tpl)
       : b.format === "pdf" ? await toPdf(cols, rows, tpl, title, { style })
       : await toXlsx(cols, rows, tpl, title, { style });

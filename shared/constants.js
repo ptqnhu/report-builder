@@ -13,7 +13,11 @@ export const OPS = {
 };
 export const NO_VALUE_OPS = new Set(["empty", "notempty", "true", "false"]);
 
-export const DATE_FORMATS = ["D MMM YYYY", "YYYY-MM-DD", "MM/DD/YYYY", "DD/MM/YYYY"];
+/**
+ * Date formats on offer. Kept to the US format for internal reports; dates.js can still write the older ones, so a
+ * report or template saved with one keeps working until it's next opened (templateStyle and the server switch it).
+ */
+export const DATE_FORMATS = ["MM/DD/YYYY"];
 
 /** New reports start in the LoanMart style: green header band with the logo, across the full width of the report. */
 export const DEFAULT_TPL = {
@@ -30,9 +34,11 @@ export const DEFAULT_TPL = {
   footer: "",
   currency: "$",
   decimals: 2,
-  dateFormat: "D MMM YYYY",
+  dateFormat: "MM/DD/YYYY",
   order: [],
   cols: {},
+  look: {}, // changes to parts of the report: colours, text sizes, bold (shared/look.js)
+  types: {}, // changes per data type: alignment, colour, bold, display format (shared/look.js)
 };
 
 /**
@@ -41,8 +47,12 @@ export const DEFAULT_TPL = {
  */
 export const STYLE_KEYS = Object.keys(DEFAULT_TPL).filter((k) => !["name", "order", "cols"].includes(k));
 
-/** A template's report-wide settings, with defaults for any it doesn't have. */
-export const templateStyle = (tpl) => Object.fromEntries(STYLE_KEYS.map((k) => [k, tpl?.[k] ?? DEFAULT_TPL[k]]));
+/** A template's report-wide settings, with defaults for any it doesn't have (or a date format no longer offered). */
+export const templateStyle = (tpl) => {
+  const out = Object.fromEntries(STYLE_KEYS.map((k) => [k, tpl?.[k] ?? DEFAULT_TPL[k]]));
+  if (!DATE_FORMATS.includes(out.dateFormat)) out.dateFormat = DEFAULT_TPL.dateFormat;
+  return out;
+};
 
 export const DEFAULT_EXPORT = {
   dsMode: "embedded", // "embedded" connection string or "shared" data source on the report server

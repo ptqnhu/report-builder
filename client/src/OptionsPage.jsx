@@ -13,7 +13,7 @@ const OPTIONS = [
     gets: [
       "A ready-to-upload .rdl file: no Report Builder or Visual Studio",
       "Your template's style, header, footer and number and date formats",
-      "Fixed filters, plus filters readers can change in SSRS",
+      "Filters readers can change in SSRS, with the defaults you pick",
       "Previewed on real rows from your database as you build it",
     ],
     needs: "A SQL Server connection and a SELECT query (or ask AI to write it).",
@@ -27,7 +27,7 @@ const OPTIONS = [
     gets: [
       "Excel (.xlsx), PDF or CSV",
       "Every row, not just the preview: up to 500,000 (PDF up to 20,000)",
-      "Excel and PDF in the LoanMart look, with an optional totals row",
+      "Excel and PDF in any built-in style (LoanMart, Ledger, Clean, Contrast) or plain, with an optional totals row",
       "Can be turned into an SSRS report later without starting over",
     ],
     needs: "A SQL Server connection and a SELECT query (or ask AI to write it).",
@@ -68,7 +68,7 @@ const OPTIONS = [
 const COMPARE = [
   ["You get", "An .rdl file for your report server", "An Excel, PDF or CSV file"],
   ["Rows", "Every row, each time the report runs", "Every row at the moment you download"],
-  ["Look", "Your template, set up in the builder", "Plain, or the LoanMart look (Excel and PDF)"],
+  ["Look", "A built-in style or your own template", "A built-in style or plain (Excel and PDF)"],
   ["Readers can filter", "Yes, with filters you choose", "No: filter in Excel instead"],
   ["Best for", "Reports people open again and again", "One-off pulls and quick checks"],
 ];

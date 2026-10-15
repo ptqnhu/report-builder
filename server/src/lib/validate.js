@@ -1,4 +1,4 @@
-import { TYPES, DEFAULT_TPL, DEFAULT_EXPORT } from "@report-builder/shared";
+import { TYPES, DEFAULT_TPL, DEFAULT_EXPORT, DATE_FORMATS, cleanLook, cleanTypes } from "@report-builder/shared";
 import { HttpError } from "./errors.js";
 
 export function requireString(v, name, { max = 200_000, allowEmpty = true } = {}) {
@@ -36,6 +36,9 @@ export function sanitizeTemplate(tpl = {}) {
   out.cols = out.cols && typeof out.cols === "object" ? out.cols : {};
   out.decimals = Math.min(4, Math.max(0, Number(out.decimals) || 0));
   out.logo = !!out.logo;
+  if (!DATE_FORMATS.includes(out.dateFormat)) out.dateFormat = DEFAULT_TPL.dateFormat;
+  out.look = cleanLook(out.look);
+  out.types = cleanTypes(out.types);
   return out;
 }
 

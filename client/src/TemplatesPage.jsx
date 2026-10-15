@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DEFAULT_TPL, templateStyle, DATE_FORMATS, fmtDate } from "@report-builder/shared";
+import { DEFAULT_TPL, templateStyle } from "@report-builder/shared";
 import Logo from "./components/Logo.jsx";
 import Orbs from "./components/Orbs.jsx";
 import TemplateDesigner from "./components/TemplateDesigner.jsx";
@@ -8,12 +8,11 @@ import { useTemplates } from "./hooks/useTemplates.js";
 const STYLE_NAMES = { loanmart: "LoanMart", ledger: "Ledger", clean: "Clean", contrast: "Contrast" };
 const DENSITY_NAMES = { compact: "compact rows", normal: "normal rows", comfortable: "roomy rows" };
 
-/** One line about a template: "Ledger · compact rows · fit to width · 14 Mar 2026". */
+/** One line about a template: "Ledger · compact rows · fit to width". */
 const summary = (t) => [
   STYLE_NAMES[t.theme] || t.theme,
   DENSITY_NAMES[t.density],
   t.layout === "fit" ? "fit to width" : "expands for every column",
-  DATE_FORMATS.includes(t.dateFormat) && fmtDate(new Date(2026, 2, 14), t.dateFormat),
 ].filter(Boolean).join(" · ");
 
 /**

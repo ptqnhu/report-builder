@@ -80,7 +80,7 @@ test("LoanMart style: green band with the embedded logo and gold stripe, as wide
   assert.match(xml, /<Rectangle Name="GoldStripe">/);
   assert.doesNotMatch(xml, /Summary1/); // no summary figures in the band
   // one info line: Generated <date>  ·  6 columns  ·  <rows>
-  assert.match(xml, /<Textbox Name="ReportMeta">.*?&quot;Generated &quot; &amp; Format\(Globals!ExecutionTime, &quot;d MMM yyyy&quot;\) &amp; &quot;  ·  6 columns  ·  &quot; &amp; Format\(CountRows\(&quot;MainDataSet&quot;\), &quot;#,0&quot;\)/s);
+  assert.match(xml, /<Textbox Name="ReportMeta">.*?&quot;Generated &quot; &amp; Format\(Globals!ExecutionTime, &quot;MM'\/'dd'\/'yyyy&quot;\) &amp; &quot;  ·  6 columns  ·  &quot; &amp; Format\(CountRows\(&quot;MainDataSet&quot;\), &quot;#,0&quot;\)/s);
 
   // A table wider than the page: the band and stripe still run to its end (6 wide columns + row numbers = 16.05in)
   const wide = build({}, { cols: Object.fromEntries(columns.map((c) => [c.name, { width: "wide" }])) });
@@ -120,4 +120,37 @@ test("display options reach the .rdl: formats, yes/no labels and text case", () 
   assert.match(xml, /<Value>=Fields!revenue\.Value<\/Value><Style>.*?<Format>'\$'#,0,\.0&quot;K&quot;;-'\$'#,0,\.0&quot;K&quot;<\/Format>/);
   assert.match(xml, /IIF\(CBool\(Fields!is_paid\.Value\), &quot;Y&quot;, &quot;N&quot;\)/);
   assert.match(xml, /<Value>=UCase\(Fields!status\.Value\)<\/Value>/);
+});
+
+test("template look and data type changes reach the .rdl; an unchanged template is unaffected", () => {
+  const look = {
+    band: { bg: "#112233", stripe: "#AA0000" },
+    title: { color: "#FF0000", size: 28, bold: false },
+    head: { bg: "#000080", color: "#FFFF00", size: 12 },
+    rows: { zebra: "#FAFAD2", line: "#CCCCCC" },
+    totals: { bg: "#DDDDDD" },
+    footer: { color: "#123456", size: 10 },
+  };
+  const types = { Currency: { color: "#008000", bold: true, align: "center", display: "paren" } };
+  const xml = build({}, { look, types });
+  assert.ok(balanced(xml));
+  assert.match(xml, /<BackgroundColor>#112233<\/BackgroundColor>/);
+  assert.match(xml, /GoldStripe[\s\S]*?<BackgroundColor>#AA0000/);
+  assert.match(xml, /<Textbox Name="ReportTitle">[\s\S]*?<FontSize>28pt<\/FontSize><Color>#FF0000/);
+  assert.match(xml, /<Textbox Name="hdr_revenue">[\s\S]*?<FontSize>12pt<\/FontSize><FontWeight>Bold<\/FontWeight><Color>#FFFF00[\s\S]*?<BackgroundColor>#000080/);
+  assert.match(xml, /&quot;#FAFAD2&quot;, &quot;White&quot;/);
+  assert.match(xml, /<Textbox Name="FooterNote">[\s\S]*?<FontSize>10pt<\/FontSize><Color>#123456/);
+  // revenue is decimal(12,2), so Currency: green, bold, centred, negatives in brackets
+  const rev = xml.match(/<Textbox Name="val_revenue">[\s\S]*?<\/Textbox>/)[0];
+  assert.match(rev, /<FontWeight>Bold<\/FontWeight><Color>#008000<\/Color><Format>'\$'#,0\.00;\('\$'#,0\.00\)/);
+  assert.match(rev, /<TextAlign>Center<\/TextAlign>/);
+
+  // No changes: same file as before the feature (apart from the random ids)
+  const plain = (x) => x.replace(/<rd:(DataSourceID|ReportID)>[^<]+/g, "");
+  assert.equal(plain(build({}, { look: {}, types: {} })), plain(build()));
+});
+
+test("Proper Case text is written with SSRS's StrConv", () => {
+  const xml = build({}, { cols: { status: { display: "proper" } } });
+  assert.match(xml, /<Textbox Name="val_status">[\s\S]*?<Value>=StrConv\(Fields!status\.Value, VbStrConv\.ProperCase\)<\/Value>/);
 });

@@ -9,12 +9,13 @@ import { downloadBlob } from "../utils/download.js";
 
 /** [id, menu label, button label] */
 const FORMATS = [["xlsx", "Excel (.xlsx)", "Excel"], ["pdf", "PDF (.pdf)", "PDF"], ["csv", "CSV (.csv)", "CSV"]];
-const STYLES = [["loanmart", "LoanMart"], ["plain", "Plain"]];
+/** Every built-in report style, plus plain (server/src/export/palette.js) */
+const STYLES = [["loanmart", "LoanMart"], ["ledger", "Ledger"], ["clean", "Clean"], ["contrast", "Contrast"], ["plain", "Plain"]];
 const TOTALS = [["show", "Show"], ["hide", "Hide"]];
 const PREVIEW_ROWS = 10; // rows shown in the preview below; the file itself has every row
 
 /**
- * Ad hoc export: name the file, pick Excel, PDF or CSV (Excel and PDF plain or in the LoanMart template's look),
+ * Ad hoc export: name the file, pick Excel, PDF or CSV (Excel and PDF in any built-in report style, or plain),
  * and download.
  * The server runs the whole query, so the file has every row (up to its export limit), in the sort order picked
  * on the preview.
@@ -24,7 +25,7 @@ export default function ExportStep({ title, setTitle, payload, previewProps, onE
   const [style, setStyle] = useState("loanmart");
   const [totals, setTotals] = useState("show"); // a totals row at the end of Excel and PDF files (CSV has none)
   const styled = format !== "csv";
-  const branded = styled && style === "loanmart";
+  const themed = styled && style !== "plain"; // the preview shows the report style; plain and CSV a bare table
   const [, , formatName] = FORMATS.find((f) => f[0] === format);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState({ text: "", error: false });
@@ -68,8 +69,10 @@ export default function ExportStep({ title, setTitle, payload, previewProps, onE
           </div>
           {styled && (
             <div className="fld">
-              <span className="fld-label">Style</span>
-              <Segmented label="File style" value={style} onChange={setStyle} options={STYLES} />
+              <label className="fld-label" htmlFor="adhoc-style">Style</label>
+              <select id="adhoc-style" className="sel" value={style} onChange={(e) => setStyle(e.target.value)}>
+                {STYLES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+              </select>
             </div>
           )}
           {styled && (
@@ -90,14 +93,14 @@ export default function ExportStep({ title, setTitle, payload, previewProps, onE
           <button className="btn btn-sm" onClick={onConvert}>Convert to SSRS report →</button>
         </div>
       </section>
-      {branded ? (
-        <ReportDocument {...previewProps} tpl={{ ...tpl, theme: "loanmart", rowNumbers: false }} title={title} desc="" filters={[]} limit={PREVIEW_ROWS} />
+      {themed ? (
+        <ReportDocument {...previewProps} tpl={{ ...tpl, theme: style, rowNumbers: false }} title={title} desc="" filters={[]} limit={PREVIEW_ROWS} />
       ) : (
         <div className="panel" style={{ padding: 0, marginTop: 16 }}>
           <ReportTable cols={cols} rows={rows} tpl={{ ...tpl, theme: "clean", zebra: false, rowNumbers: false }} sort={sort} onSort={onSort} onMove={onMove} limit={PREVIEW_ROWS} />
         </div>
       )}
-      {!branded && <PreviewNote {...previewProps} limit={PREVIEW_ROWS} />}
+      {!themed && <PreviewNote {...previewProps} limit={PREVIEW_ROWS} />}
     </>
   );
 }

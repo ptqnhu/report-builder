@@ -1,14 +1,20 @@
-import { TYPES, formatValue, DISPLAY_OPTIONS, displayOf } from "@report-builder/shared";
+import { TYPES, formatValue, distinctDisplays, displayOf } from "@report-builder/shared";
 import TypeBadge from "../components/TypeBadge.jsx";
 
 // Used to show the display options when a column has no values in the preview rows
 const EXAMPLE = { Text: "Sample text", Integer: 12345, Decimal: 1234.5678, Currency: -1234.5, Percentage: 0.1234, Boolean: true };
 
-/** The display options for a column, each shown as an example value from the column's own data. */
+/**
+ * The display options for a column, each shown as an example value from the column's own data. Options that would
+ * look exactly like one above them are left out (distinctDisplays), except the one already chosen.
+ */
 function displayChoices(c, rows, tpl) {
   const found = rows.find((r) => r[c.key] !== null && r[c.key] !== undefined && r[c.key] !== "");
   const sample = found ? found[c.key] : EXAMPLE[c.type] ?? new Date(2026, 2, 14, 15, 30);
-  return DISPLAY_OPTIONS[c.type].map(([id]) => {
+  const options = distinctDisplays(c, tpl);
+  const chosen = displayOf(c);
+  if (!options.some(([id]) => id === chosen)) options.push([chosen]);
+  return options.map(([id]) => {
     const col = { ...c, display: id };
     const ex = c.type === "Boolean" ? `${formatValue(true, col, tpl) || "blank"} / ${formatValue(false, col, tpl) || "blank"}` : formatValue(sample, col, tpl);
     return [id, ex];
@@ -38,7 +44,9 @@ export default function ColumnsStep({ columns, setColumns, rows, tpl, setTpl }) 
       </div>
       <div className="types-head"><span /><span>Column</span><span>Type</span><span>Display as</span><span>Preview</span></div>
       {columns.map((raw) => {
-        const c = { ...raw, display: tpl.cols[raw.name]?.display }; // with its display choice, for the examples
+        // With its display choice, for the examples: the column's own, else its data type's from the template
+        const own = tpl.cols[raw.name]?.display;
+        const c = { ...raw, display: own && own !== "auto" ? own : tpl.types?.[raw.type]?.display };
         return (
         <div className={`types-row${c.selected ? "" : " off"}`} key={c.key}>
           <input type="checkbox" className="types-check" checked={c.selected} onChange={() => toggle(c.key)} aria-label={`Include ${c.name}`} />

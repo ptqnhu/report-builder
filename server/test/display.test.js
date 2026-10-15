@@ -1,10 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULT_TPL, formatValue, displayOf, DISPLAY_OPTIONS } from "@report-builder/shared";
+import { DEFAULT_TPL, formatValue, displayOf, DISPLAY_OPTIONS, textCase, distinctDisplays } from "@report-builder/shared";
 import { netFormat } from "../src/rdl/styles.js";
 import { excelFormat } from "../src/export/xlsx.js";
 
-const tpl = { ...DEFAULT_TPL, currency: "$", decimals: 2, dateFormat: "D MMM YYYY" };
+const tpl = { ...DEFAULT_TPL, currency: "$", decimals: 2, dateFormat: "MM/DD/YYYY" };
 const col = (type, display, name = "amount") => ({ type, display, name });
 
 test("number display options: preview text and the matching .NET format", () => {
@@ -32,22 +32,23 @@ test("number display options: preview text and the matching .NET format", () => 
 
 test("dates, yes/no and text", () => {
   const d = new Date(2026, 2, 14, 15, 30);
-  assert.equal(formatValue(d, col("Date", "auto"), tpl), "14 Mar 2026");
-  assert.equal(formatValue(d, col("Date", "YYYY-MM-DD"), tpl), "2026-03-14");
+  assert.equal(formatValue(d, col("Date", "auto"), tpl), "03/14/2026");
+  // a format no longer offered (saved before dates were kept to the US format) falls back to the default
+  assert.equal(formatValue(d, col("Date", "YYYY-MM-DD"), tpl), "03/14/2026");
   assert.equal(formatValue(d, col("Date", "MMM YYYY"), tpl), "Mar 2026");
   assert.equal(netFormat(col("Date", "MMM YYYY"), tpl), "MMM yyyy");
-  assert.equal(formatValue(d, col("DateTime", "auto"), tpl), "14 Mar 2026 15:30");
-  assert.equal(formatValue(d, col("DateTime", "date"), tpl), "14 Mar 2026");
+  assert.equal(formatValue(d, col("DateTime", "auto"), tpl), "03/14/2026 15:30");
+  assert.equal(formatValue(d, col("DateTime", "date"), tpl), "03/14/2026");
   assert.equal(formatValue(d, col("DateTime", "time"), tpl), "15:30");
   assert.equal(netFormat(col("DateTime", "time"), tpl), "HH:mm");
   // with seconds: the preview, the .rdl and Excel all agree
   const ds = new Date(2026, 2, 14, 15, 30, 45);
-  assert.equal(formatValue(ds, col("DateTime", "auto"), tpl), "14 Mar 2026 15:30");
-  assert.equal(formatValue(ds, col("DateTime", "seconds"), tpl), "14 Mar 2026 15:30:45");
+  assert.equal(formatValue(ds, col("DateTime", "auto"), tpl), "03/14/2026 15:30");
+  assert.equal(formatValue(ds, col("DateTime", "seconds"), tpl), "03/14/2026 15:30:45");
   assert.equal(formatValue(ds, col("DateTime", "timesec"), tpl), "15:30:45");
-  assert.equal(netFormat(col("DateTime", "seconds"), tpl), "d MMM yyyy HH:mm:ss");
+  assert.equal(netFormat(col("DateTime", "seconds"), tpl), "MM'/'dd'/'yyyy HH:mm:ss");
   assert.equal(netFormat(col("DateTime", "timesec"), tpl), "HH:mm:ss");
-  assert.equal(excelFormat(col("DateTime", "seconds"), tpl), "d mmm yyyy hh:mm:ss");
+  assert.equal(excelFormat(col("DateTime", "seconds"), tpl), "mm/dd/yyyy hh:mm:ss");
   assert.equal(excelFormat(col("DateTime", "timesec"), tpl), "hh:mm:ss");
   assert.equal(formatValue(false, col("Boolean", "tf"), tpl), "False");
   assert.equal(formatValue(false, col("Boolean", "check"), tpl), "");
@@ -55,4 +56,20 @@ test("dates, yes/no and text", () => {
   // an option the type doesn't have (e.g. after a type change) falls back to the default
   assert.equal(displayOf(col("Percentage", "k")), "auto");
   assert.ok(Object.values(DISPLAY_OPTIONS).every((opts) => opts[0][0] === "auto"));
+});
+
+test("Proper Case capitalises the first letter after each space, as SSRS does", () => {
+  const c = { type: "Text", name: "customer", display: "proper" };
+  assert.equal(textCase("mARIA de la CRUZ", c), "Maria De La Cruz");
+  assert.equal(formatValue("JOHN o'NEIL", c, DEFAULT_TPL), "John O'neil");
+});
+
+test("display options that format like one above them are left out, using the template's settings", () => {
+  const ids = (type, tpl = DEFAULT_TPL, name = "amount") => distinctDisplays({ type, name }, tpl).map(([id]) => id);
+  assert.deepEqual(ids("Text"), ["auto", "upper", "lower", "proper"]);
+  assert.deepEqual(ids("Currency"), ["auto", "n0", "paren", "k", "m"]); // 2 decimals = Default at 2 decimals
+  assert.deepEqual(ids("Currency", { ...DEFAULT_TPL, decimals: 0 }), ["auto", "n2", "paren", "k", "m"]);
+  assert.ok(!ids("Integer").includes("n0")); // separators are the default…
+  assert.ok(!ids("Integer", DEFAULT_TPL, "LoanID").includes("plain")); // …but not for ID columns
+  assert.ok(!ids("Date").includes(DEFAULT_TPL.dateFormat));
 });

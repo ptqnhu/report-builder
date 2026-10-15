@@ -1,16 +1,28 @@
 import { useState } from "react";
 import { alignOf, formatValue } from "@report-builder/shared";
 import { WIDTHS, computeTotals } from "../utils/table.js";
+import { textStyle, part } from "../utils/look.js";
 
 /**
  * The report's table. With onMove(fromKey, toKey, after), the column headings can be dragged to reorder the
  * columns; Alt+Left / Alt+Right on a focused heading moves it one place too.
+ * The template's look (tpl.look, tpl.types) is applied inline. data-part / data-type mark what each cell is,
+ * for the template designer's click-to-edit.
  */
 export default function ReportTable({ cols, rows, tpl, sort, onSort, onMove, limit }) {
   const [drag, setDrag] = useState(null); // { from: key, over: key, after: bool } while a heading is dragged
   const shown = limit ? rows.slice(0, limit) : rows;
   const totals = tpl.totals ? computeTotals(cols, rows) : null;
   const firstText = cols.findIndex((c) => !totals || !totals[c.key]);
+  const head = part(tpl, "head"), body = part(tpl, "rows"), foot = part(tpl, "totals");
+  const headStyle = { ...textStyle(head), ...(head.bg && { background: head.bg }) };
+  // Row cells: the rows' size, colour and line colour, the data type's colour and bold, the alternate row colour
+  const cellStyle = (c, i) => ({
+    ...textStyle({ size: body.size, color: c?.color || body.color, bold: c?.bold || undefined }),
+    ...(body.line && { borderBottomColor: body.line }),
+    ...(tpl.zebra && body.zebra && i % 2 === 1 && { background: body.zebra }),
+  });
+  const footStyle = { ...textStyle({ size: body.size, color: foot.color }), ...(foot.bg && { background: foot.bg }), ...(foot.line && { borderTopColor: foot.line }) };
   const cls = ["rt", `rt-${tpl.theme}`, `rt-${tpl.density}`, tpl.zebra && "rt-zebra", tpl.layout === "expand" && tpl.stickyFirst && "rt-sticky"]
     .filter(Boolean).join(" ");
 
@@ -21,7 +33,7 @@ export default function ReportTable({ cols, rows, tpl, sort, onSort, onMove, lim
       <table className={cls}>
         <thead>
           <tr>
-            {tpl.rowNumbers && <th className="rt-rn">#</th>}
+            {tpl.rowNumbers && <th className="rt-rn" data-part="head" style={headStyle}>#</th>}
             {cols.map((c, i) => {
               const active = sort && sort.key === c.key;
               const dropping = drag && drag.over === c.key && drag.from !== c.key;
@@ -48,7 +60,7 @@ export default function ReportTable({ cols, rows, tpl, sort, onSort, onMove, lim
                 if (next) onMove(c.key, next.key, e.key === "ArrowRight");
               });
               return (
-                <th key={c.key} style={{ textAlign: alignOf(c), minWidth: WIDTHS[c.width] }} className={cls || undefined} {...dragProps}
+                <th key={c.key} data-part="head" style={{ textAlign: alignOf(c), minWidth: WIDTHS[c.width], ...headStyle }} className={cls || undefined} {...dragProps}
                     aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
                   <button className="rt-sort" onClick={() => onSort && onSort(c.key)} onKeyDown={onKeyDown}
                     aria-keyshortcuts={onMove ? "Alt+ArrowLeft Alt+ArrowRight" : undefined}>
@@ -66,11 +78,11 @@ export default function ReportTable({ cols, rows, tpl, sort, onSort, onMove, lim
           )}
           {shown.map((r, i) => (
             <tr key={i}>
-              {tpl.rowNumbers && <td className="rt-rn">{i + 1}</td>}
+              {tpl.rowNumbers && <td className="rt-rn" data-part="rows" style={cellStyle(null, i)}>{i + 1}</td>}
               {cols.map((c) => {
                 const v = r[c.key];
                 return (
-                  <td key={c.key} className={c.wrap ? "wrap" : undefined} style={{ textAlign: alignOf(c), minWidth: WIDTHS[c.width] }}>
+                  <td key={c.key} data-type={c.type} className={c.wrap ? "wrap" : undefined} style={{ textAlign: alignOf(c), minWidth: WIDTHS[c.width], ...cellStyle(c, i) }}>
                     {v === null || v === undefined ? <span className="rt-null">—</span> : formatValue(v, c, tpl)}
                   </td>
                 );
@@ -81,11 +93,11 @@ export default function ReportTable({ cols, rows, tpl, sort, onSort, onMove, lim
         {totals && shown.length > 0 && (
           <tfoot>
             <tr>
-              {tpl.rowNumbers && <td className="rt-rn">{firstText < 0 ? "Total" : ""}</td>}
+              {tpl.rowNumbers && <td className="rt-rn" data-part="totals" style={footStyle}>{firstText < 0 ? "Total" : ""}</td>}
               {cols.map((c, i) => {
                 const t = totals[c.key];
                 return (
-                  <td key={c.key} style={{ textAlign: alignOf(c) }}>
+                  <td key={c.key} data-part="totals" style={{ textAlign: alignOf(c), ...footStyle }}>
                     {t ? (
                       <>
                         {formatValue(t.value, c, tpl)}

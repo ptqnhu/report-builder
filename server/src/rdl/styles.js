@@ -1,4 +1,4 @@
-import { BRAND, NUMERIC, numberSpec, dateSpec } from "@report-builder/shared";
+import { NUMERIC, numberSpec, dateSpec, THEME_COLORS } from "@report-builder/shared";
 
 export const NET_TYPE = {
   Text: "System.String", Integer: "System.Int32", Decimal: "System.Decimal", Currency: "System.Decimal",
@@ -6,16 +6,8 @@ export const NET_TYPE = {
 };
 export const NET_DATE = { "D MMM YYYY": "d MMM yyyy", "YYYY-MM-DD": "yyyy-MM-dd", "MM/DD/YYYY": "MM'/'dd'/'yyyy", "DD/MM/YYYY": "dd'/'MM'/'yyyy", "MMM YYYY": "MMM yyyy" };
 
-/** Table colours per style. rowLine, totalBg and totalLine fall back to the ledger values when left out. */
-export const THEME_RDL = {
-  ledger: { headBg: "#18233A", headColor: "White", zebra: "#F3F5F9", headBorder: null, rowLine: "#E6EAF0", totalBg: "#EEF1F6", totalLine: "#18233A" },
-  clean: { headBg: null, headColor: "#18233A", zebra: "#F7F8FA", headBorder: "#18233A" },
-  contrast: { headBg: "#2D4FD6", headColor: "White", zebra: "#EEF2FE", headBorder: null },
-  loanmart: {
-    headBg: BRAND.green, headColor: "White", zebra: BRAND.greenTint, headBorder: null,
-    rowLine: BRAND.greenLine, totalBg: "#E2EEE6", totalLine: BRAND.green, ink: BRAND.ink, band: true,
-  },
-};
+/** Table colours per style (shared/look.js, so the template designer starts from the same values). */
+export const THEME_RDL = THEME_COLORS;
 export const DENSITY_RDL = {
   compact: { pad: 2, size: 9, h: 0.22 },
   normal: { pad: 4, size: 10, h: 0.28 },

@@ -95,7 +95,7 @@ test("suggestions, choices and the preview's slicing", () => {
   assert.equal(n({ [k("discount_rate")]: { from: "", to: "4" } }), 5);
   assert.equal(n({ [k("is_paid")]: "No" }), 10);
   assert.equal(describeSlices(SLICERS, { [k("status")]: ["Open"], [k("order_date")]: { from: "2026-01-05" }, [k("discount_rate")]: { from: "2", to: "4" } }, colsByKey, DEFAULT_TPL),
-    "Status: Open  |  Region: All  |  Order Date: from 5 Jan 2026  |  Discount Rate: 2% to 4%  |  Is Paid: All");
+    "Status: Open  |  Region: All  |  Order Date: from 01/05/2026  |  Discount Rate: 2% to 4%  |  Is Paid: All");
   // a type change resets a slicer to a kind that fits; removed columns drop out
   const typed = { ...colsByKey, [k("status")]: { ...colsByKey[k("status")], type: "Integer" } };
   assert.deepEqual(liveSlicers([...SLICERS, { col: "gone", kind: "list" }], typed).map((s) => s.kind), ["range", "search", "range", "range", "yesno"]);
