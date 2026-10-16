@@ -9,14 +9,16 @@ export default function StepRail({ flow, step, reached, onGo, sql, connection })
   return (
     <>
       <header className="rb-rail">
-        <p className="rb-brand"><a href="#" title="Back to the home page"><Logo size={24} />Report builder</a></p>
-        {connection && (
-          <p className="rail-conn" title={`${connection.database} on ${connection.server}`}>
-            <span className="conn-dot" aria-hidden="true" />
-            <strong>{connection.database}</strong>
-            <span>{connection.server}</span>
-          </p>
-        )}
+        <p className="rb-brand"><a href="#" title="Back to the home page"><Logo size={24} />LoanMart Insights</a></p>
+        <div className="rail-end">
+          {connection && (
+            <p className="rail-conn" title={`${connection.database} on ${connection.server}`}>
+              <span className="conn-dot" aria-hidden="true" />
+              <strong>{connection.database}</strong>
+              <span>{connection.server}</span>
+            </p>
+          )}
+        </div>
       </header>
 
       <nav className="rb-steps" aria-label="Progress">

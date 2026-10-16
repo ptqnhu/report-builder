@@ -3,7 +3,6 @@ import { DEFAULT_TPL, DEFAULT_EXPORT, effectiveColumns, keyBy, applyFilters, pre
 import { api } from "./api.js";
 import { STEPS, FLOWS, SHARED_STEPS, KIND_NAMES } from "./steps/steps.js";
 import StepRail from "./components/StepRail.jsx";
-import Orbs from "./components/Orbs.jsx";
 import ExportStep from "./steps/ExportStep.jsx";
 import ConnectStep from "./steps/ConnectStep.jsx";
 import QueryStep from "./steps/QueryStep.jsx";
@@ -195,12 +194,12 @@ export default function App({ kind }) {
   };
   const S = STEPS[step];
   const nextLabel = typeof S.next === "function" ? S.next(kind) : S.next;
+  const blocked = step === "connect" && !connection; // Continue waits for the step's own action
   const stepNo = at(step);
   const showPreviewBar = stepNo >= at("columns") && analysis.key;
 
   return (
     <div className="rb">
-      <Orbs />
       <div className="rb-shell">
         <StepRail flow={flow} step={step} reached={reached} onGo={go} sql={sql} connection={connection} />
 
@@ -267,7 +266,7 @@ export default function App({ kind }) {
             <div className="row">
               {error && <span className="error" role="alert">{error}</span>}
               {nextLabel ? (
-                <button className="btn btn-primary" onClick={next} disabled={busy || (step === "connect" && !connection)}>
+                <button className={`btn${blocked ? "" : " btn-primary"}`} onClick={next} disabled={busy || blocked}>
                   {busy ? "Asking SQL Server…" : nextLabel}
                 </button>
               ) : (

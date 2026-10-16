@@ -1,4 +1,4 @@
-# Report builder
+# LoanMart Insights
 
 Connects to a SQL Server database, turns a query into a formatted report, and exports it as an `.rdl` file for SQL Server Reporting Services (SSRS).
 

@@ -1,5 +1,6 @@
 import { EXAMPLE_SQL } from "./steps.js";
 import AiAssistant from "../components/AiAssistant.jsx";
+import SqlEditor from "../components/SqlEditor.jsx";
 
 export default function QueryStep({ sql, setSql, connection, aiChat, setAiChat, onExpired }) {
   return (
@@ -11,7 +12,7 @@ export default function QueryStep({ sql, setSql, connection, aiChat, setAiChat, 
         </p>
         <label className="fld">
           <span className="fld-label">SQL query</span>
-          <textarea className="ta code" rows={14} spellCheck={false} value={sql} onChange={(e) => setSql(e.target.value)}
+          <SqlEditor value={sql} onChange={(e) => setSql(e.target.value)}
             placeholder={"SELECT customer_name, order_date, total\nFROM dbo.Orders\nWHERE order_date >= '2026-01-01'"} />
         </label>
         <div className="panel-foot">

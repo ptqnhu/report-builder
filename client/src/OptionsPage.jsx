@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import Logo from "./components/Logo.jsx";
-import Orbs from "./components/Orbs.jsx";
 import { Icon } from "./Landing.jsx";
 import "./landing.css";
 
@@ -73,19 +72,20 @@ const COMPARE = [
   ["Best for", "Reports people open again and again", "One-off pulls and quick checks"],
 ];
 
-/** "Learn more" page (#/options): every way to use the app, with a way into each. */
+/** "Explore" page (#/options): every way to use the app, with a way into each. */
 export default function OptionsPage({ onStart }) {
   useEffect(() => { window.scrollTo(0, 0); }, []); // opened from partway down the home page
   const start = (go) => (go.startsWith("#") ? (location.hash = go) : onStart(go));
 
   return (
     <>
-      <Orbs />
       <div className="lp-page">
         <header className="lp-bar">
           <div className="lp lp-top">
-            <p className="lp-brand"><a href="#" title="Back to the home page"><Logo size={30} />Report builder</a></p>
-            <a className="btn btn-sm" href="#"><Icon name="back" size={14} /> Home</a>
+            <p className="lp-brand"><a href="#" title="Back to the home page"><Logo size={30} />LoanMart Insights</a></p>
+            <div className="rail-end">
+              <a className="btn btn-sm" href="#"><Icon name="back" size={14} /> Home</a>
+            </div>
           </div>
         </header>
 
@@ -106,7 +106,7 @@ export default function OptionsPage({ onStart }) {
                   {o.gets.map((g) => <li key={g}>{g}</li>)}
                 </ul>
                 <p className="lp-needs"><strong>You'll need:</strong> {o.needs}</p>
-                <button className="btn btn-primary lp-cta" onClick={() => start(o.go)}>{o.action} <Icon name="arrow" size={15} /></button>
+                <button className="btn lp-cta" onClick={() => start(o.go)}>{o.action} <Icon name="arrow" size={15} /></button>
               </li>
             ))}
           </ul>
@@ -129,8 +129,8 @@ export default function OptionsPage({ onStart }) {
         </section>
 
         <footer className="lp lp-foot">
-          <p className="lp-brand sm"><Logo size={20} />Report builder</p>
-          <span>From question to finished report</span>
+          <p className="lp-brand sm"><Logo size={20} />LoanMart Insights</p>
+          <span>From a simple requirement to a ready-to-share report</span>
         </footer>
       </div>
     </>

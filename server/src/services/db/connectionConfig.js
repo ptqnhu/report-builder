@@ -42,7 +42,7 @@ export function buildConfig(input = {}, { fromThisComputer = false } = {}) {
     const connectionString = [
       `Driver=${odbcValue(settings.odbcDriver)}`, `Server=${odbcValue(target)}`, `Database=${odbcValue(database)}`,
       "Trusted_Connection=yes", `Encrypt=${input.encrypt === false ? "no" : "yes"}`,
-      `TrustServerCertificate=${input.trustServerCertificate ? "yes" : "no"}`, "APP=Report builder",
+      `TrustServerCertificate=${input.trustServerCertificate ? "yes" : "no"}`, "APP=LoanMart Insights",
     ].join(";") + ";";
     return {
       config: { driver: "msnodesqlv8", connectionString, pool: { max: 4, min: 0, idleTimeoutMillis: 30_000 }, connectionTimeout: 15_000, requestTimeout: settings.queryTimeoutMs },
@@ -61,7 +61,7 @@ export function buildConfig(input = {}, { fromThisComputer = false } = {}) {
     options: {
       encrypt: input.encrypt !== false,
       trustServerCertificate: !!input.trustServerCertificate,
-      appName: "Report builder",
+      appName: "LoanMart Insights",
       ...(instanceName ? { instanceName } : {}),
     },
     pool: { max: 4, min: 0, idleTimeoutMillis: 30_000 },

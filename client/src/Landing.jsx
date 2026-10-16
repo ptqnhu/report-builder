@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { api } from "./api.js";
+import Lenis from "lenis";
+import "lenis/dist/lenis.css";
 import Logo from "./components/Logo.jsx";
-import Orbs from "./components/Orbs.jsx";
 import "./landing.css";
 
 /** Small line icons (24×24, drawn with strokes). */
@@ -43,13 +43,94 @@ const FEATURES = [
   { icon: "filter", title: "Filters and sort carried over", text: "The readers' filters and the sort order you set in the preview are written into the .rdl file, so the report opens the same way." },
 ];
 
-const WORKS_WITH = [
-  ["database", "SQL Server"],
-  ["file", "SSRS 2008 R2+"],
-  ["layers", "Power BI Report Server"],
-  ["monitor", "Windows sign-in"],
-  ["code", "ODBC Driver 18"],
+/**
+ * "What you can do" section: the four things the app does. `art` picks the line drawing in <CanArt>, `soon` marks a
+ * feature that is not in the app yet.
+ */
+const CAN_DO = [
+  {
+    art: "ssrs",
+    title: "Create an SSRS report",
+    items: ["Your own SELECT or AI-written", "Columns, types and totals", "Filters and sort", "Ready-to-upload .rdl file", "SSRS and Power BI Report Server"],
+  },
+  {
+    art: "adhoc",
+    title: "Create an ad hoc export",
+    items: ["Excel, PDF or CSV", "Every row, up to 500,000", "Built-in styles", "Optional totals row", "Turn it into an SSRS report later"],
+  },
+  {
+    art: "template",
+    title: "Build a template",
+    items: ["Style, row height and layout", "Header and footer", "Currency, decimals and dates", "Designed on sample data", "Reused on every report"],
+  },
+  {
+    art: "chart",
+    title: "See data in charts",
+    items: ["Bar, line and pie charts", "Built from your query's rows", "Totals at a glance"],
+    soon: true,
+  },
 ];
+
+/** Line drawings for the "What you can do" features: thin ink strokes, 100×100. */
+function CanArt({ name }) {
+  const art = {
+    // A report page with a folded corner and rows of data
+    ssrs: (
+      <>
+        <path d="M22 6h40l18 18v70H22z M62 6v18h18" />
+        <path d="M32 40h38 M32 54h38 M32 68h24" />
+      </>
+    ),
+    // A table of rows with an arrow down out of it: the rows downloaded as a file
+    adhoc: (
+      <>
+        <path d="M10 10h80v52H10z M10 27h80 M10 44h80 M37 10v52 M63 10v52" />
+        <path d="M50 70v24 M41 85l9 9 9-9" />
+      </>
+    ),
+    // Two stacked pages, the front one with a header bar and footer line: a reusable look
+    template: (
+      <>
+        <path d="M30 6h62v70" />
+        <path d="M8 18h70v76H8z M8 34h70 M18 84h50" />
+        <path d="M18 48h50 M18 60h34" />
+      </>
+    ),
+    // Axes with bars and a line through the tops
+    chart: (
+      <>
+        <path d="M10 6v84h84" />
+        <path d="M24 90V62 M42 90V44 M60 90V54 M78 90V26" strokeWidth="9" strokeLinecap="butt" opacity=".16" />
+        <path d="M24 62 42 44 60 54 78 26" />
+      </>
+    ),
+  }[name];
+  return (
+    <svg className="lp-can-art" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1.3" aria-hidden="true">
+      {art}
+    </svg>
+  );
+}
+
+/** "What you can do": a corner label, then the four features in a 2 × 2 grid. */
+function CanDo() {
+  return (
+    <section id="what" className="lp lp-can">
+      <p className="lp-can-eyebrow" data-line>What LoanMart Insights can do</p>
+      <div className="lp-can-grid">
+        {CAN_DO.map((f) => (
+          <article key={f.title} className="lp-can-item">
+            <CanArt name={f.art} />
+            <h3>{f.title}{f.soon && <span className="lp-can-soon">Coming soon</span>}</h3>
+            <ul className="lp-can-list">
+              {f.items.map((i) => <li key={i}>{i}</li>)}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 /** Columns shown in the hero illustration, like the builder's Columns and Data types steps. */
 const COLUMNS = [
@@ -67,9 +148,10 @@ const curve = ([x1, y1], [x2, y2]) => {
 };
 
 /**
- * Measures the illustration and returns its connector lines: a spine between the source tiles, a branch from
- * each tile into the Columns card, a link from the selected TotalBalance row to its detail card, and a drop to the
- * .rdl output chip. Points come from the real elements, so the lines stay attached whatever the fonts or width.
+ * Measures the illustration and returns its connector lines: a spine down the source tiles (a column at the
+ * Columns card's lower left), a branch from each tile into the card, a link from the selected TotalBalance row to
+ * its detail card, and a drop to the .rdl output chip. Points come from the real elements, so the lines stay attached whatever the fonts or width.
+ * Tiles that are hidden (narrow screens) are left out, with their lines.
  * Called from Diagram, whose layout effect runs after every ref in it is attached.
  */
 function useWires(rootRef, parts) {
@@ -84,9 +166,9 @@ function useWires(rootRef, parts) {
         const r = el.getBoundingClientRect();
         return { x: r.left - box.left, y: r.top - box.top, w: r.width, h: r.height, cx: r.left - box.left + r.width / 2, cy: r.top - box.top + r.height / 2 };
       };
-      const { tiles, list, selected, detail, detailTitle, output } = parts.current;
+      const { tiles, list, selected, detail, output } = parts.current;
       if (!list || !detail || !output || tiles.some((t) => !t)) return;
-      const t = tiles.map(rect), L = rect(list), S = rect(selected), D = rect(detail), DT = rect(detailTitle), O = rect(output);
+      const t = tiles.filter((el) => el.offsetParent !== null).map(rect), L = rect(list), S = rect(selected), D = rect(detail), O = rect(output);
       const paths = [], nodes = [];
       // Spine down the source tiles
       for (let i = 0; i < t.length - 1; i++) paths.push(`M ${t[i].cx} ${t[i].y + t[i].h} L ${t[i + 1].cx} ${t[i + 1].y}`);
@@ -96,8 +178,9 @@ function useWires(rootRef, parts) {
         paths.push(curve([tile.x + tile.w, tile.cy], end));
         nodes.push(end);
       }
-      // Selected column → its settings
-      const from = [L.x + L.w, S.cy], to = [D.x, DT.cy];
+      // Selected column → its settings: straight across into the detail card's edge, level with the selected row
+      // (kept a little inside the card's corners if the row sits above or below it)
+      const from = [L.x + L.w, S.cy], to = [D.x, Math.min(Math.max(S.cy, D.y + 24), D.y + D.h - 24)];
       paths.push(curve(from, to));
       nodes.push(from, to);
       // Settings → report file
@@ -136,7 +219,7 @@ function Diagram() {
   const wires = useWires(rootRef, parts);
 
   return (
-    <section ref={rootRef} className="lp lp-diagram" aria-label="Example: a query's columns in the builder">
+    <section ref={rootRef} className="lp-diagram" aria-label="Example: a query's columns in the builder">
       <Wires wires={wires} />
 
       <div className="lp-rail">
@@ -157,7 +240,7 @@ function Diagram() {
 
       <div className="lp-col3">
         <div ref={part("detail")} className="lp-card lp-detail">
-          <p ref={part("detailTitle")} className="lp-card-title"><span className="lp-badge">C</span> TotalBalance</p>
+          <p className="lp-card-title"><span className="lp-badge">C</span> TotalBalance</p>
           <dl className="lp-kv">
             <div><dt>SQL type</dt><dd>decimal(19,4)</dd></div>
             <div><dt>Shown as</dt><dd className="hi">Currency</dd></div>
@@ -197,7 +280,7 @@ function StartMenu({ onStart }) {
 
   return (
     <div className="lp-menu" ref={ref}>
-      <button className="btn btn-primary btn-sm" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <button className="btn btn-sm" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         Get started <Icon name="chevron" size={14} />
       </button>
       {open && (
@@ -220,12 +303,74 @@ function StartMenu({ onStart }) {
   );
 }
 
+/**
+ * True once the loading screen (#boot in index.html) has gone, so the hero's opening animation plays where it can be
+ * seen rather than behind the loading screen. True straight away when there is no loading screen (coming back from
+ * another page).
+ */
+function useLoaded() {
+  const [loaded, setLoaded] = useState(() => !document.getElementById("boot"));
+  useEffect(() => {
+    if (loaded) return;
+    const mo = new MutationObserver(() => {
+      if (!document.getElementById("boot")) { setLoaded(true); mo.disconnect(); }
+    });
+    mo.observe(document.body, { childList: true });
+    return () => mo.disconnect();
+  }, [loaded]);
+  return loaded;
+}
+
+/**
+ * Smooth (eased) scrolling with the mouse wheel while the landing page is open, using Lenis. Left off for people who
+ * have asked their system for reduced motion. Returns a ref to the Lenis instance, or null when it is off.
+ */
+function useSmoothScroll() {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const lenis = new Lenis({ autoRaf: true, lerp: 0.1 });
+    ref.current = lenis;
+    return () => { lenis.destroy(); ref.current = null; };
+  }, []);
+  return ref;
+}
+
+/**
+ * Draws the page's [data-line] lines as they scroll into view: adds .drawn when a line comes on screen (a little above
+ * the bottom edge, so it is seen drawing), and takes it off once the line has gone back off the bottom, so it draws
+ * again next time you scroll down to it. Lines scrolled past the top stay drawn. Waits for `enabled` (the loading
+ * screen gone), so the hero line is not drawn behind it.
+ */
+function useLineReveal(rootRef, enabled) {
+  useEffect(() => {
+    if (!enabled || !rootRef.current) return;
+    const lines = rootRef.current.querySelectorAll("[data-line]");
+    const show = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) e.target.classList.add("drawn");
+    }, { rootMargin: "0px 0px -12% 0px" });
+    const reset = new IntersectionObserver((entries) => {
+      for (const e of entries) if (!e.isIntersecting && e.boundingClientRect.top >= innerHeight) e.target.classList.remove("drawn");
+    });
+    lines.forEach((el) => { show.observe(el); reset.observe(el); });
+    return () => { show.disconnect(); reset.disconnect(); };
+  }, [rootRef, enabled]);
+}
+
 /** Front page: what the app does, and the way into the builder. */
 export default function Landing({ onStart }) {
-  const [local, setLocal] = useState(null);
-  useEffect(() => {
-    api.localServers().then((list) => setLocal(list.find((i) => i.running) || null)).catch(() => {});
-  }, []);
+  const shown = useLoaded();
+  const pageRef = useRef(null);
+  const lenis = useSmoothScroll();
+  useLineReveal(pageRef, shown);
+
+  /** Top bar section links: glide to the section (stopping at its scroll-margin-top) instead of jumping. */
+  const toSection = (e) => {
+    const target = document.querySelector(e.currentTarget.getAttribute("href"));
+    if (!lenis.current || !target) return; // no smooth scrolling (reduced motion): the browser jumps as usual
+    e.preventDefault();
+    lenis.current.scrollTo(target, { offset: -parseFloat(getComputedStyle(target).scrollMarginTop || 0) });
+  };
 
   /** The two ways into the builder: a formatted SSRS report, or a plain CSV / Excel export of the rows. */
   const getStarted = () => (
@@ -237,56 +382,43 @@ export default function Landing({ onStart }) {
 
   return (
     <>
-    <Orbs />
-    <div className="lp-page">
+    <div className="lp-page" ref={pageRef}>
       <header className="lp-bar">
         <div className="lp lp-top">
-          <p className="lp-brand"><Logo size={30} />Report builder</p>
+          <p className="lp-brand"><Logo size={30} />LoanMart Insights</p>
           <nav className="lp-links" aria-label="Page sections">
-            <a href="#how">How it works</a>
-            <a href="#features">Features</a>
-            <a href="#templates">Templates</a>
+            <a href="#how" onClick={toSection}>How it works</a>
+            <a href="#what" onClick={toSection}>Features</a>
+            <a href="#/templates">Templates</a>
             <StartMenu onStart={onStart} />
           </nav>
         </div>
       </header>
 
       <div className="lp-hero-wrap">
-
-        <section className="lp lp-hero">
-          <h1>From a question about your data to a finished report</h1>
+        <div className="lp lp-hero-grid">
+        <section className="lp-hero">
+          <h1>
+            <span className="lp-hero-line">From a <span className="serif hl">simple</span> requirement</span>
+            <span className="lp-hero-line">to a polished <span className="serif hl">report</span></span>
+          </h1>
           <p className="lp-lead">
-            Describe what you need and let AI write the query, or paste your own SELECT. Shape the result on real
-            data, then publish it as an SSRS report or download every row as Excel, PDF or CSV. Design a template
-            once and reuse it on every report.
-            No Report Builder, no Visual Studio, no hand-editing XML.
+            Let AI write the query or paste your own, shape it on real data, and publish an SSRS report or export to
+            Excel, PDF or CSV.
+            <span className="lp-lead-line">No Report Builder, no XML.</span>
           </p>
-          <div className="lp-actions">
-            {getStarted()}
-            <a className="btn lp-cta" href="#/options">Learn more</a>
+          <Diagram />
+          <div className="lp-actions" data-line>
+            <span className="lp-lead-rule" aria-hidden="true" />
+            <a className="btn lp-cta lp-explore" href="#/options">Explore <Icon name="arrow" size={18} /></a>
           </div>
-          {local && (
-            <p className="lp-local">
-              <span className="conn-dot" aria-hidden="true" />
-              <span>SQL Server found on this computer at <strong>{local.server}</strong>. You can connect without a login.</span>
-            </p>
-          )}
         </section>
-
-        <Diagram />
+        </div>
       </div>
 
-      <section className="lp lp-works">
-        <p className="lp-eyebrow">From your database to your report server</p>
-        <p className="lp-works-sub">Works with the tools you already use</p>
-        <ul className="lp-logos">
-          {WORKS_WITH.map(([icon, name]) => <li key={name}><Icon name={icon} size={17} />{name}</li>)}
-        </ul>
-      </section>
-
-      <section id="how" className="lp lp-split">
-        <div>
-          <h2>How it works</h2>
+      <section id="how" className="lp lp-how">
+        <p className="lp-can-eyebrow lp-how-label">How it works</p>
+        <div className="lp-how-grid">
           <ol className="lp-steps">
             {STAGES.map((s, i) => (
               <li key={s.title}>
@@ -295,9 +427,8 @@ export default function Landing({ onStart }) {
               </li>
             ))}
           </ol>
-        </div>
         <div className="lp-card lp-why">
-          <h2>Why Report builder</h2>
+          <h2>Why LoanMart Insights</h2>
           <p>
             Report Builder and Visual Studio make you design SSRS reports by hand. This app starts from the query you
             already have, reads the real column types from SQL Server, and writes the report file for you.
@@ -306,53 +437,13 @@ export default function Landing({ onStart }) {
             {FEATURES.map((f) => <li key={f.title}><Icon name={f.icon} size={14} />{f.title}</li>)}
           </ul>
         </div>
-      </section>
-
-      <section id="features" className="lp lp-section">
-        <h2>Built for real report work</h2>
-        <ul className="lp-features">
-          {FEATURES.map((f) => (
-            <li key={f.title} className="lp-card">
-              <span className="lp-tile sm"><Icon name={f.icon} size={16} /></span>
-              <h3>{f.title}</h3>
-              <p>{f.text}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section id="templates" className="lp lp-split lp-split-rev">
-        <div className="lp-card lp-template">
-          <p className="lp-card-title"><Icon name="layers" size={14} /> Template · Sales ledger</p>
-          <div className="lp-field">
-            <span>Look</span>
-            <code>Ledger · zebra rows · first column pinned</code>
-          </div>
-          <div className="lp-field">
-            <span>Formats</span>
-            <code>$ · 2 decimals · 03/14/2026</code>
-          </div>
-          <div className="lp-field">
-            <span>Header and footer</span>
-            <code>LoanMart Collections · Internal use only</code>
-          </div>
-        </div>
-        <div>
-          <h2>Flexible templates – no XML required</h2>
-          <p className="lp-copy">
-            Design a template in the template designer, on sample data, with no database needed. Pick the style, row
-            height, layout, header, footer and number and date formats, and save it.
-          </p>
-          <p className="lp-copy">
-            Then apply it to any SSRS report in the Template step. Each report can still adjust its own column
-            headings and widths. The .rdl file is written for you.
-          </p>
-          <a className="btn btn-primary lp-cta" style={{ marginTop: 22 }} href="#/templates">Open the template designer <Icon name="arrow" size={15} /></a>
         </div>
       </section>
+
+      <CanDo />
 
       <section className="lp lp-end">
-        <div className="lp-card lp-end-card">
+        <div className="lp-card lp-end-card hero">
           <div>
             <h2>Ready when you are</h2>
             <p>SSRS reports for 2008 R2 and later, including Power BI Report Server, plus Excel, PDF and CSV files.</p>
@@ -361,9 +452,9 @@ export default function Landing({ onStart }) {
         </div>
       </section>
 
-      <footer className="lp lp-foot">
-        <p className="lp-brand sm"><Logo size={20} />Report builder</p>
-        <span>From question to finished report</span>
+      <footer className="lp lp-foot" data-line>
+        <p className="lp-brand sm"><Logo size={20} />LoanMart Insights</p>
+        <span>From a simple requirement to a ready-to-share report</span>
       </footer>
     </div>
     </>

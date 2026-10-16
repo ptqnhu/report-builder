@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { api } from "../api.js";
+import Sparkle from "./Sparkle.jsx";
+import SqlCode from "./SqlCode.jsx";
 
 /**
  * Describe the report in plain English and the AI writes the query into the editor.
@@ -33,9 +35,9 @@ export default function AiAssistant({ connection, sql, setSql, chat, setChat, on
   }
 
   return (
-    <div className="panel ai">
+    <div className="panel ai hero">
       <div className="ai-head">
-        <label className="fld-label" htmlFor="ai-ask">Ask AI to write the query</label>
+        <label className="fld-label" htmlFor="ai-ask"><Sparkle />Ask AI to write the query</label>
         {chat.length > 0 && <button className="btn btn-quiet btn-sm" onClick={() => { setChat([]); setError(""); }} disabled={busy}>New conversation</button>}
       </div>
 
@@ -45,10 +47,11 @@ export default function AiAssistant({ connection, sql, setSql, chat, setChat, on
             <div key={i} className="ai-msg ai-user">{m.content}</div>
           ) : (
             <div key={i} className="ai-msg ai-answer">
+              <span className="ai-tag"><Sparkle size={12} />AI-generated</span>
               {m.explanation && <p>{m.explanation}</p>}
               {m.sql && (
                 <>
-                  <pre className="ai-sql">{m.sql}</pre>
+                  <pre className="ai-sql"><SqlCode sql={m.sql} /></pre>
                   {m.sql !== sql
                     ? <button className="btn btn-quiet btn-sm" onClick={() => setSql(m.sql)}>Use this query</button>
                     : <span className="muted">In the editor below.</span>}

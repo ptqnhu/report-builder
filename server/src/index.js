@@ -16,7 +16,7 @@ if (process.env.LOG_DATABASE) {
 }
 
 const server = createApp({ connections, activityLog }).listen(settings.port, () => {
-  console.log(`Report builder API listening on http://localhost:${settings.port}`);
+  console.log(`LoanMart Insights API listening on http://localhost:${settings.port}`);
 });
 
 async function shutdown() {

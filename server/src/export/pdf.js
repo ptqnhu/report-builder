@@ -40,7 +40,7 @@ function fit(doc, text, width) {
 export function toPdf(cols, rows, tpl, title, { style = "plain" } = {}) {
   const branded = style === "loanmart";
   const P = tablePalette(style);
-  const doc = new PDFDocument({ ...PAGE, bufferPages: true, info: { Title: title || "Report", Creator: "Report builder" } });
+  const doc = new PDFDocument({ ...PAGE, bufferPages: true, info: { Title: title || "Report", Creator: "LoanMart Insights" } });
   const chunks = [];
   doc.on("data", (b) => chunks.push(b));
   const done = new Promise((resolve, reject) => { doc.on("end", () => resolve(Buffer.concat(chunks))); doc.on("error", reject); });

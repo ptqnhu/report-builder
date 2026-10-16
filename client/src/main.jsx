@@ -15,7 +15,7 @@ function kindOf(hash) {
 /** Pages outside the builder: "#/templates" the template designer, "#/options" everything the app can do. */
 const PAGES = { "#/templates": "templates", "#/options": "options" };
 const pageOf = (hash) => PAGES[hash] || null;
-const TITLES = { templates: "Templates · Report builder", options: "What you can do · Report builder" };
+const TITLES = { templates: "Templates · LoanMart Insights", options: "What you can do · LoanMart Insights" };
 
 /**
  * "/" shows the landing page, "#/build/<kind>" the builder, and the PAGES their own page.
@@ -32,7 +32,7 @@ function Root() {
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
-  useEffect(() => { if (!building) document.title = TITLES[page] || "Report builder"; }, [building, page]);
+  useEffect(() => { if (!building) document.title = TITLES[page] || "LoanMart Insights"; }, [building, page]);
   const start = (k) => { location.hash = `#/build/${k}`; window.scrollTo(0, 0); };
 
   return (

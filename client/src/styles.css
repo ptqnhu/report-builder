@@ -1,33 +1,81 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Inter+Tight:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* App colours: ink black, frosted-glass surfaces and a soft cyan accent. Shared by the landing page and the builder. */
+/* Design tokens, "modern luxury" (see the design brief): cool off-white page, white cards that float on it with
+   hardly any border, ink green type and emphasis, emerald for links and active states, pale mint only for AI.
+   Emerald is the logo's own green (BRAND.green in shared/brand.js); ink green is the same hue, nearly black.
+   Shared by the landing page and the builder. The exported reports and the report preview keep their own colours
+   (.doc below). */
 .rb {
-  --ink: #EEF1F7;
-  --ink2: #9AA1B5;
-  --ink3: #646B80;
-  --line: #262A38;
-  --line2: #1E2230;
-  --bg: #0F1117;
-  --rail: #0E1017;
-  /* Plain glass: an almost clear tint, a thin border and a blur. The colour comes from the
-     gradient circles behind it (.rb-orbs), not from the box. */
-  --surface: rgba(255, 255, 255, .04);
-  --glass-line: rgba(255, 255, 255, .1);
-  --glass-blur: blur(26px) saturate(160%);
-  --glass-shadow: none;
-  --field: rgba(255, 255, 255, .045);
-  --field-line: rgba(255, 255, 255, .12);
-  --accent: #7FD3E6;
-  --accent-hover: #A2E1F0;
-  --accent-ink: #082029;
-  --accent-soft: rgba(127, 211, 230, .14);
-  --accent-glow: rgba(64, 170, 205, .35);
-  --muted-pill: #34374A;
-  --warn: #F2C46D;
-  --warn-bg: rgba(242, 196, 109, .12);
-  --danger: #FF8A80;
+  /* Core palette */
+  --ink: #0A2A1C;
+  --ink2: #5C6B65;
+  --ink3: #66746E;
+  --emerald: #0F5131;
+  --bg: #F4F5F2;
+  --surface: #FFFFFF;
+  --mist: #E6EAE6;
+  /* Lime: the accent. Used sparingly: the highlighted word, the main action on a dark hero card, the AI sparkle.
+     Always with ink green text on it, never as text on a light background (too little contrast). */
+  --lime: #D7F36B;
+  --lime-hover: #E3F78F;
+  --lime-ink: #0A2A1C;
+  --ai: var(--lime);
+  --line: #E1E5E1;
+  --line2: #ECEFEC;
+  /* Cards: white on the off-white page; a barely-there edge and shadow, so separation comes from the contrast */
+  --card-line: rgba(10, 42, 28, .06);
+  --card-shadow: 0 1px 2px rgba(10, 42, 28, .04), 0 12px 32px -20px rgba(10, 42, 28, .16);
+  --field: #FFFFFF;
+  --field-line: #D5DBD6;
+  --btn-line: #C9D1CB;
+  --accent: #0A2A1C;
+  --accent-hover: #0F5131;
+  --accent-ink: #FFFFFF;
+  --accent-soft: rgba(15, 81, 49, .08);
+  --muted-pill: var(--mist);
+  /* Smaller surfaces */
+  --raised: #FFFFFF;
+  --seg-on: #FFFFFF;
+  --hover-line: #B4BEB7;
+  --code-bg: #F8F9F7;
+  --code-preview: #F1F3F0;
+  --bar-bg: rgba(244, 245, 242, .84);
+  --hero-bg: #0A2A1C;
+  --wire: #B9CCC2;
+  --badge-num-bg: #E0EDE5;
+  --badge-date-bg: #E8ECEF;
+  --badge-date: #4D5B66;
+  /* SQL colours, as in SSMS (blue keywords, magenta functions, red strings, green comments, grey operators),
+     each a shade deeper than SSMS's own so it reads at WCAG AA on the code background */
+  --sql-keyword: #0000FF;
+  --sql-function: #B000B0;
+  --sql-string: #C80000;
+  --sql-comment: #007A00;
+  --sql-operator: #6B6B6B;
+  /* Meaning. Green is the brand, so it never means "good": positive is teal-blue. Always pair with a sign or word. */
+  --pos: #1F5F7A;
+  --pos-bg: #E2EEF3;
+  --neg: #8E3B2A;
+  --neg-bg: #F6E6E1;
+  --warn: #8A6212;
+  --warn-bg: #F6EDD9;
+  --danger: var(--neg);
+  /* Charts: the brand-green tonal scale, then the muted accents when categories must be told apart. Six at most. */
+  --data-1: #0A2A1C;
+  --data-2: #0F5131;
+  --data-3: #3F8564;
+  --data-4: #84B89D;
+  --data-5: #C0DCCB;
+  --data-other: #C9CCC6;
+  --data-teal: #1F5F7A;
+  --data-rust: #8E3B2A;
+  --data-amber: #B8862C;
+  --data-slate: #6B7A86;
   --display: 'Inter Tight', 'Inter', system-ui, sans-serif;
-  font-family: 'Inter', 'IBM Plex Sans', system-ui, sans-serif;
+  --serif: 'Instrument Serif', Georgia, serif;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color-scheme: light;
   color: var(--ink);
   background: var(--bg);
   min-height: 100vh;
@@ -64,20 +112,20 @@
   justify-content: space-between;
   gap: 24px;
   padding: 10px clamp(16px, 4vw, 48px);
-  background: rgba(12, 14, 20, .72);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  background: var(--bar-bg);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-bottom: 1px solid var(--line);
   color: var(--ink2)
 }
 
 .rb-brand {
   flex: none;
-  color: #fff;
+  color: var(--ink);
   font-family: var(--display);
   font-weight: 600;
-  font-size: 16px;
-  letter-spacing: -0.01em;
+  font-size: 17px;
+  letter-spacing: -0.02em;
   white-space: nowrap
 }
 
@@ -111,18 +159,17 @@
   flex: none
 }
 
-/* Line joining each step to the one before it; cyan once that step has been reached */
+/* Line joining each step to the one before it; emerald once that step has been reached */
 .steps li+li::before {
   content: '';
   width: clamp(10px, 1.6vw, 28px);
-  height: 2px;
+  height: 1px;
   margin: 0 6px;
-  border-radius: 2px;
   background: var(--line)
 }
 
 .steps li.reached+li.reached::before {
-  background: rgba(127, 211, 230, .55)
+  background: var(--emerald)
 }
 
 .step-btn {
@@ -154,8 +201,8 @@
   place-items: center;
   font-size: 13px;
   font-weight: 600;
-  background: var(--rail);
-  border: 2px solid var(--field-line);
+  background: var(--surface);
+  border: 1px solid var(--field-line);
   color: var(--ink2);
   flex: none;
   position: relative;
@@ -163,23 +210,24 @@
 }
 
 .step-btn.done .step-dot {
-  border-color: var(--accent);
-  color: var(--accent)
+  border-color: var(--emerald);
+  color: var(--emerald)
 }
 
 .step-btn.current {
-  color: #fff
+  color: var(--ink);
+  font-weight: 500
 }
 
 .step-btn.current .step-dot {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-ink);
-  box-shadow: 0 0 0 4px var(--accent-soft)
+  box-shadow: 0 0 0 4px var(--mist)
 }
 
 .step-btn:not(:disabled):hover .step-label {
-  color: #fff
+  color: var(--ink)
 }
 
 /* When the bar gets narrow, only the current step keeps its name; the others show just their number.
@@ -215,17 +263,36 @@
 
 .page-head .stepno {
   font-size: 13px;
-  color: var(--ink3);
-  margin-bottom: 4px
+  font-weight: 500;
+  color: var(--emerald);
+  margin-bottom: 6px
 }
 
+/* Large and confident, slightly tight */
 .page-head h1 {
   font-family: var(--display);
-  font-size: 34px;
+  font-size: 36px;
   font-weight: 500;
-  letter-spacing: -0.03em;
-  color: #fff;
-  line-height: 1.2
+  letter-spacing: -0.035em;
+  color: var(--ink);
+  line-height: 1.12
+}
+
+/* The one serif italic moment on a screen: a single word or phrase, never a whole heading */
+.rb .serif {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0
+}
+
+/* Lime highlighter: a marker stroke across the lower part of a word. */
+.rb .hl {
+  padding: 0 .08em;
+  margin: 0 -.04em;
+  background: linear-gradient(transparent 56%, var(--lime) 56%, var(--lime) 92%, transparent 92%);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone
 }
 
 .page-head p.help {
@@ -236,109 +303,15 @@
 .panel {
   position: relative;
   background: var(--surface);
-  border: 1px solid var(--glass-line);
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--card-line);
+  box-shadow: var(--card-shadow);
   border-radius: 16px;
-  padding: 20px
+  padding: 24px
 }
 
-/* Gradient circles behind everything, so the glass boxes show their blur.
-   Fixed to the window, so they pass behind the boxes as the page scrolls. Edit colours, sizes and positions here. */
-.rb-orbs {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 0
-}
-
-/* Each circle is shaded like a sphere lit from the top left. Layers, top to bottom:
-   1. a soft highlight, 2. faint light bouncing back into the shadow at the lower right,
-   3. the body: --light → --mid → --dark, ending in a near-black rim. Each circle only sets its three colours.
-   Kept dim and still on purpose, so they sit in the background rather than pulling attention from the content.
-   To make them stronger, raise brightness (.42) and the highlight's first .28. */
-.rb-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: brightness(.42); /* solid but dim: overlapping balls hide each other instead of blending */
-  background:
-    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, .28) 0%, rgba(255, 255, 255, .08) 7%, transparent 19%),
-    radial-gradient(circle at 76% 82%, color-mix(in srgb, var(--light) 30%, transparent) 0%, transparent 22%),
-    radial-gradient(circle at 35% 30%, var(--light) 0%, var(--mid) 36%, var(--dark) 70%, #04050A 100%);
-  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .85)
-}
-
-.rb-orb:nth-child(1) {
-  --light: #9FE3F2;
-  --mid: #3C8FD8;
-  --dark: #12306B;
-  width: 460px;
-  height: 460px;
-  top: -140px;
-  right: -60px
-}
-
-.rb-orb:nth-child(2) {
-  --light: #A58CFF;
-  --mid: #5A44D6;
-  --dark: #1B1660;
-  width: 380px;
-  height: 380px;
-  top: 38%;
-  left: -110px
-}
-
-.rb-orb:nth-child(3) {
-  --light: #6FE6D4;
-  --mid: #1F9DA8;
-  --dark: #0A3A4E;
-  width: 300px;
-  height: 300px;
-  bottom: -90px;
-  right: 16%
-}
-
-.rb-orb:nth-child(4) {
-  --light: #8CC4FF;
-  --mid: #5468F0;
-  --dark: #1E1A6A;
-  width: 220px;
-  height: 220px;
-  top: 62%;
-  left: 48%;
-  filter: brightness(.34);
-  z-index: 1 /* in front of the cyan circle (3) where they overlap */
-}
-
-.rb-orb:nth-child(5) {
-  --light: #F2A2D6;
-  --mid: #A04FD8;
-  --dark: #34145E;
-  width: 170px;
-  height: 170px;
-  bottom: 14%;
-  left: 24%;
-  filter: brightness(.34)
-}
-
-.rb-orb:nth-child(6) {
-  --light: #B4ECF7;
-  --mid: #3FB0D4;
-  --dark: #0E4460;
-  width: 140px;
-  height: 140px;
-  top: 58%;
-  right: 6%;
-  filter: brightness(.36)
-}
-
-/* Page content sits above the circles */
 .rb-shell,
 .lp-page {
-  position: relative;
-  z-index: 1
+  position: relative
 }
 
 .panel+.panel {
@@ -368,13 +341,18 @@
   font: inherit;
   font-size: 14px;
   border: 1px solid var(--field-line);
-  border-radius: 8px;
-  padding: 7px 10px;
+  border-radius: 12px;
+  padding: 9px 12px;
   background: var(--field);
-  backdrop-filter: blur(8px);
   color: var(--ink);
-  color-scheme: dark;
-  width: 100%
+  width: 100%;
+  transition: border-color .15s ease
+}
+
+.inp:hover,
+.sel:hover,
+.ta:hover {
+  border-color: var(--hover-line)
 }
 
 .inp::placeholder,
@@ -382,11 +360,10 @@
   color: var(--ink3)
 }
 
-/* The open list of a dropdown is drawn by the browser, not by our glass styles. Without a solid colour here it
-   falls back to white behind our light text, so give the options an explicit dark background. */
+/* The open list of a dropdown is drawn by the browser; give it the app's paper and ink */
 .sel option,
 .sel optgroup {
-  background-color: #1A1D27;
+  background-color: var(--surface);
   color: var(--ink)
 }
 
@@ -395,8 +372,8 @@
 }
 
 .sel option:checked {
-  background-color: #2B4A5A;
-  color: #fff
+  background-color: var(--mist);
+  color: var(--ink)
 }
 
 .ta {
@@ -405,9 +382,52 @@
 }
 
 .ta.code {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-ligatures: none; /* show SQL exactly as written: >= stays >= */
   font-size: 13.5px;
-  background: var(--field)
+  background: var(--code-bg)
+}
+
+/* SQL colours (SqlCode) */
+.sql-keyword { color: var(--sql-keyword) }
+.sql-function { color: var(--sql-function) }
+.sql-string { color: var(--sql-string) }
+.sql-comment { color: var(--sql-comment) }
+.sql-operator { color: var(--sql-operator) }
+
+/* SqlEditor: the coloured layer sits behind a textarea whose own text is transparent. Same box, same font, no
+   wrapping in either, so each character of the layer is exactly under the caret's character. */
+.sql-editor {
+  position: relative
+}
+
+.rb .sql-layer {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: pre;
+  pointer-events: none;
+  color: var(--ink)
+}
+
+.rb .sql-input {
+  position: relative;
+  display: block;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--ink);
+  white-space: pre;
+  overflow: auto
+}
+
+.sql-input::placeholder {
+  color: var(--ink3)
+}
+
+.sql-input::selection {
+  color: transparent;
+  background: rgba(15, 81, 49, .2)
 }
 
 .sel {
@@ -415,35 +435,24 @@
   width: auto
 }
 
+/* Buttons are pills. Secondary actions are outlined; only one filled (primary) button per view. */
 .btn {
   font: inherit;
   font-size: 14px;
   font-weight: 500;
   border-radius: 999px;
-  padding: 8px 16px;
-  border: 1px solid rgba(255, 255, 255, .14);
-  background: linear-gradient(135deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14);
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  padding: 8px 18px;
+  border: 1px solid var(--btn-line);
+  background: transparent;
   color: var(--ink);
   cursor: pointer;
   white-space: nowrap;
-  transition: transform .12s ease, box-shadow .12s ease
+  transition: border-color .15s ease, background-color .15s ease, color .15s ease
 }
 
 .btn:hover {
-  background: linear-gradient(135deg, rgba(255, 255, 255, .18), rgba(255, 255, 255, .07));
-  border-color: rgba(255, 255, 255, .22)
-}
-
-/* Pressed look: the button sinks a little on hover and further when clicked */
-.btn:not(:disabled):not(.btn-quiet):hover {
-  transform: translateY(1px) scale(.97)
-}
-
-.btn:not(:disabled):not(.btn-quiet):active {
-  transform: translateY(2px) scale(.94)
+  border-color: var(--ink);
+  color: var(--ink)
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -457,19 +466,17 @@
   cursor: default
 }
 
+/* Primary: filled ink green, emerald on hover */
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-hover), var(--accent) 55%, #5FBFD8);
-  border-color: rgba(255, 255, 255, .35);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 6px 20px -6px var(--accent-glow);
-  color: var(--accent-ink);
-  font-weight: 600
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink)
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #C2ECF6, var(--accent-hover) 55%, var(--accent));
-  border-color: rgba(255, 255, 255, .5);
-  color: var(--accent-ink);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 0 28px var(--accent-glow)
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--accent-ink)
 }
 
 .btn-sm {
@@ -481,9 +488,7 @@
   border-color: transparent;
   background: transparent;
   box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  color: var(--accent);
+  color: var(--emerald);
   padding-left: 4px;
   padding-right: 4px
 }
@@ -491,15 +496,16 @@
 .btn-quiet:hover {
   border-color: transparent;
   background: transparent;
-  color: var(--accent);
-  text-decoration: underline
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px
 }
 
 .icon-btn {
   font: inherit;
   border: 1px solid var(--field-line);
   background: var(--field);
-  border-radius: 6px;
+  border-radius: 999px;
   width: 30px;
   height: 30px;
   cursor: pointer;
@@ -518,7 +524,7 @@
 .rb select:focus-visible,
 .rb textarea:focus-visible,
 .rb summary:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--emerald);
   outline-offset: 2px
 }
 
@@ -599,7 +605,7 @@ details.opt[open] summary {
 .col-item input[type=checkbox] {
   width: 17px;
   height: 17px;
-  accent-color: var(--accent);
+  accent-color: var(--emerald);
   flex: none
 }
 
@@ -608,7 +614,8 @@ details.opt[open] summary {
 }
 
 .col-expr {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-ligatures: none; /* show SQL exactly as written: >= stays >= */
   font-size: 12.5px;
   color: var(--ink3);
   overflow: hidden;
@@ -626,17 +633,17 @@ details.opt[open] summary {
 }
 
 .tb-Number {
-  background: rgba(120, 160, 255, .16);
-  color: #A9C1FF
+  background: var(--badge-num-bg);
+  color: var(--emerald)
 }
 
 .tb-Date {
-  background: rgba(196, 140, 255, .16);
-  color: #D5B3FF
+  background: var(--badge-date-bg);
+  color: var(--badge-date)
 }
 
 .tb-Text {
-  background: rgba(255, 255, 255, .08);
+  background: var(--muted-pill);
   color: var(--ink2)
 }
 
@@ -750,32 +757,36 @@ details.opt[open] summary {
   margin-bottom: 10px
 }
 
+/* Segmented control: a mist pill track, the chosen item a white pill */
 .seg {
   display: inline-flex;
-  border: 1px solid var(--field-line);
-  border-radius: 10px;
-  overflow: hidden;
+  gap: 2px;
+  padding: 3px;
+  background: var(--mist);
+  border-radius: 999px;
   flex-wrap: wrap
 }
 
 .seg button {
   border: none;
-  background: var(--field);
-  padding: 6px 10px;
+  border-radius: 999px;
+  background: transparent;
+  padding: 6px 14px;
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+  color: var(--ink2)
+}
+
+.seg button:hover {
   color: var(--ink)
 }
 
-.seg button+button {
-  border-left: 1px solid var(--field-line)
-}
-
 .seg button[aria-pressed=true] {
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 600
+  background: var(--seg-on);
+  color: var(--ink);
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(10, 42, 28, .12)
 }
 
 .radio {
@@ -789,7 +800,7 @@ details.opt[open] summary {
 
 .radio input,
 .check input {
-  accent-color: var(--accent);
+  accent-color: var(--emerald);
   margin-top: 3px
 }
 
@@ -821,7 +832,7 @@ details.opt[open] summary {
   gap: 10px;
   padding: 12px;
   border: 1px solid var(--line2);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--field)
 }
 
@@ -837,7 +848,7 @@ details.opt[open] summary {
   flex-wrap: wrap;
   padding: 10px;
   border: 1px solid var(--line2);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--field)
 }
 
@@ -868,12 +879,11 @@ details.opt[open] summary {
 .rb-nav {
   position: sticky;
   bottom: 0;
-  /* Frosted like the top bar but more solid, edge to edge, so the light report scrolls behind it
-     instead of showing through the buttons */
-  background: rgba(12, 14, 20, .92);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border-top: 1px solid rgba(255, 255, 255, .08);
+  /* Frosted, edge to edge, so the report scrolls softly behind the buttons */
+  background: var(--bar-bg);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-top: 1px solid var(--line);
   padding: 14px clamp(16px, 4vw, 48px);
   margin: auto calc(-1 * clamp(16px, 4vw, 48px)) 0;
   display: flex;
@@ -1337,14 +1347,15 @@ details.opt[open] summary {
 }
 
 .export {
-  margin-bottom: 18px;
-  border-color: rgba(127, 211, 230, .3)
+  margin-bottom: 18px
 }
 
 .export h2 {
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  color: var(--ink);
   margin-bottom: 4px
 }
 
@@ -1386,7 +1397,7 @@ details.opt[open] summary {
   padding: 10px 14px 10px 30px;
   background: var(--warn-bg);
   color: var(--warn);
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 13.5px
 }
 
@@ -1422,7 +1433,8 @@ details.opt[open] summary {
 
 .rdl-xml {
   margin-top: 10px;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-ligatures: none; /* show SQL exactly as written: >= stays >= */
   font-size: 12px;
   background: var(--field)
 }
@@ -1515,7 +1527,7 @@ details.opt[open] summary {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--emerald);
   box-shadow: 0 0 0 4px var(--accent-soft);
   flex: none
 }
@@ -1531,11 +1543,11 @@ details.opt[open] summary {
   gap: 12px 16px
 }
 
-/* Saved connections: one glass card per connection at the top of the Connect form */
+/* Saved connections: one card per connection at the top of the Connect form */
 .saved {
   margin-bottom: 20px;
   padding-bottom: 18px;
-  border-bottom: 1px solid var(--glass-line)
+  border-bottom: 1px solid var(--card-line)
 }
 
 .saved-list {
@@ -1557,8 +1569,8 @@ details.opt[open] summary {
 }
 
 .saved-list li:hover {
-  border-color: rgba(127, 211, 230, .45);
-  background: rgba(127, 211, 230, .06)
+  border-color: var(--emerald);
+  background: var(--raised)
 }
 
 .saved-list li.on {
@@ -1662,6 +1674,14 @@ details.opt[open] summary {
   text-decoration: none
 }
 
+/* Right end of a top bar: the connected database or a page link, then the theme switch */
+.rail-end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0
+}
+
 .rb-brand a:hover {
   text-decoration: underline
 }
@@ -1685,10 +1705,8 @@ body {
   padding: 14px 16px;
   margin-bottom: 14px;
   background: var(--surface);
-  border: 1px solid var(--glass-line);
-  border-radius: 14px;
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur)
+  border: 1px solid var(--card-line);
+  border-radius: 16px
 }
 
 .slicer-grid {
@@ -1818,7 +1836,7 @@ body {
   height: 22px;
   padding: 0;
   border-radius: 6px;
-  border: 1px solid #CBD3DF;
+  border: 1px solid var(--field-line, #CBD3DF);
   background: #fff;
   color: var(--ink);
   font: inherit;
@@ -1875,10 +1893,10 @@ body {
   max-height: 280px;
   overflow: auto;
   padding: 6px;
-  background: #1A1D27;
+  background: var(--surface);
   border: 1px solid var(--field-line);
-  border-radius: 10px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, .45)
+  border-radius: 12px;
+  box-shadow: 0 14px 32px -12px rgba(10, 42, 28, .22)
 }
 
 .pick-pop label {
@@ -1893,7 +1911,7 @@ body {
 }
 
 .pick-pop label:hover {
-  background: rgba(255, 255, 255, .06)
+  background: var(--accent-soft)
 }
 
 .pick-pop .pick-all {
@@ -1904,7 +1922,7 @@ body {
 }
 
 .pick-pop input {
-  accent-color: var(--accent)
+  accent-color: var(--emerald)
 }
 
 /* The readers' current choices under the header, as SSRS prints them. */
@@ -2063,6 +2081,14 @@ body {
   margin: 0
 }
 
+/* AI features carry the sparkle, in pale mint */
+.ai-spark {
+  color: var(--ai);
+  flex: none;
+  vertical-align: -2px;
+  margin-right: 6px
+}
+
 /* Footer under a text box (AI assistant, SQL query): the note wraps on its own, the button keeps its place
    at the top right */
 .panel-foot {
@@ -2093,7 +2119,7 @@ body {
 }
 
 .ai-msg {
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 10px 14px;
   font-size: 14px;
   line-height: 1.5;
@@ -2115,15 +2141,77 @@ body {
   margin: 0 0 8px
 }
 
+/* "AI-generated": every answer says it was written by the AI, so it's never mistaken for source data */
+.ai-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink2)
+}
+
+.ai-tag .ai-spark {
+  margin: 0
+}
+
 .ai-sql {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-ligatures: none; /* show SQL exactly as written: >= stays >= */
+  font-size: 12.5px;
   margin: 0 0 8px;
-  padding: 10px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, .25);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--code-preview);
   overflow-x: auto;
   white-space: pre
+}
+
+/* The hero card: the screen's single dark ink green block, and its focal point. Use it once per screen.
+   Inside it the palette flips: light text, frosted fields, a white pill for the main action, mint for AI. */
+.rb .hero {
+  --ink: #FFFFFF;
+  --ink2: #B7C6BF;
+  --ink3: #93A59D;
+  --field: rgba(255, 255, 255, .06);
+  --field-line: rgba(255, 255, 255, .16);
+  --btn-line: rgba(255, 255, 255, .3);
+  /* The main action on a hero card is a lime pill */
+  --accent: var(--lime);
+  --accent-hover: var(--lime-hover);
+  --accent-ink: var(--lime-ink);
+  --accent-soft: rgba(255, 255, 255, .1);
+  --emerald: var(--lime);
+  --danger: #F0B4A6;
+  --sql-keyword: #6CB4F5;
+  --sql-function: #E38CE8;
+  --sql-string: #F2918A;
+  --sql-comment: #74C178;
+  --sql-operator: #9AA5A0;
+  background: var(--hero-bg);
+  border-color: var(--hero-bg);
+  color: var(--ink);
+  box-shadow: 0 24px 48px -28px rgba(10, 42, 28, .55)
+}
+
+.rb .hero .inp,
+.rb .hero .ta {
+  color-scheme: dark
+}
+
+.rb .hero .inp:hover,
+.rb .hero .ta:hover {
+  border-color: rgba(255, 255, 255, .32)
+}
+
+.rb .hero .ai-sql {
+  background: rgba(0, 0, 0, .22);
+  color: #DDE8E3
+}
+
+.rb .hero .ai-tag {
+  color: var(--ai)
 }
 
 /* Template designer page: the list of saved templates */
@@ -2147,14 +2235,14 @@ body {
 }
 
 .fld-hint a {
-  color: var(--accent)
+  color: var(--emerald)
 }
 
 a.btn {
   text-decoration: none
 }
 
-/* Always keep room for the scrollbar, so short and long pages are the same width and the circles don't shift */
+/* Always keep room for the scrollbar, so short and long pages are the same width */
 html {
   scrollbar-gutter: stable
 }
@@ -2175,13 +2263,13 @@ html {
 
 .tpl-canvas [data-part]:hover,
 .tpl-canvas [data-type]:hover {
-  outline: 1px dashed #2D9CDB;
+  outline: 1px dashed var(--data-3);
   outline-offset: -1px
 }
 
 .tpl-canvas .is-picked,
 .tpl-canvas .is-picked:hover {
-  outline: 2px solid #2D9CDB;
+  outline: 2px solid var(--emerald);
   outline-offset: -2px
 }
 

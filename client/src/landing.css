@@ -1,5 +1,26 @@
 /* Landing page. Only the landing page uses these styles; the builder's look is in styles.css.
    Colours and fonts come from the .rb block at the top of styles.css, shared with the builder. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+/* Type: Inter Tight (var(--display)) stays on the headlines and brand, where its tight spacing looks sharp; body text,
+   buttons and labels use Inter, which is easier to read at small sizes */
+.lp-page {
+  font-family: 'Inter', 'Inter Tight', system-ui, sans-serif;
+  /* .rb turns on tabular numbers for the builder's tables; in Inter that also widens hyphens ("AI - written") */
+  font-variant-numeric: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility
+}
+
+/* Body paragraphs get a little more room between lines (the illustration's small labels keep their own) */
+.lp-lead,
+.lp-steps p,
+.lp-why>p,
+.lp-copy,
+.lp-end-card p {
+  line-height: 1.6
+}
 
 .lp {
   max-width: 1180px;
@@ -27,15 +48,13 @@
   font-size: 14.5px
 }
 
-/* Shared glass card: plain blur, no fill or glow of its own. The colour comes from the circles behind it. */
+/* Shared card: white on the off-white page, with hardly any edge */
 .lp-card {
   position: relative;
   background: var(--surface);
-  border: 1px solid var(--glass-line);
+  border: 1px solid var(--card-line);
   border-radius: 16px;
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur)
+  box-shadow: var(--card-shadow)
 }
 
 
@@ -48,24 +67,21 @@
   color: var(--ink)
 }
 
+/* Icon tile: an emerald icon on a soft mist square */
 .lp-tile {
   display: inline-grid;
   place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: 10px;
-  color: var(--accent);
-  background: linear-gradient(135deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .04));
-  border: 1px solid rgba(255, 255, 255, .16);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 0 28px rgba(64, 170, 205, .25);
-  backdrop-filter: blur(16px) saturate(170%);
-  -webkit-backdrop-filter: blur(16px) saturate(170%)
+  border-radius: 12px;
+  color: var(--emerald);
+  background: var(--mist)
 }
 
 .lp-tile.sm {
   width: 36px;
   height: 36px;
-  border-radius: 9px;
+  border-radius: 10px;
   margin-bottom: 14px
 }
 
@@ -73,18 +89,19 @@
 .lp-hero-wrap {
   position: relative;
   overflow: hidden;
-  padding-bottom: 72px
+  padding-bottom: 0 /* the line at the bottom of the hero is also the top line of "How it works" */
 }
 
-/* Top bar: stays at the top while scrolling, frosted like the builder's top bar so the page reads cleanly under it */
+/* Top bar: full width and stays at the top while scrolling, as glass: the page's own background colour, see-through
+   and frosted, so whatever scrolls under it shows through blurred */
 .lp-bar {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(12, 14, 20, .72);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border-bottom: 1px solid rgba(255, 255, 255, .08)
+  --glass-shine: rgba(255, 255, 255, .7);
+  background: color-mix(in srgb, var(--bg) 55%, transparent); /* 55% = how solid the glass is */
+  backdrop-filter: blur(35px) saturate(170%);
+  -webkit-backdrop-filter: blur(35px) saturate(170%);
 }
 
 .lp-top {
@@ -108,7 +125,7 @@
   font-weight: 600;
   font-size: 19px;
   letter-spacing: -0.02em;
-  color: #fff
+  color: var(--ink)
 }
 
 .lp-brand.sm {
@@ -116,20 +133,43 @@
   gap: 8px
 }
 
-.lp-links {
+.lp-links,
+.lp-top .rail-end {
   display: flex;
   align-items: center;
   gap: clamp(16px, 2.6vw, 32px)
 }
 
 .lp-links a {
+  position: relative;
   color: var(--ink);
   text-decoration: none;
   font-size: 14px
 }
 
-.lp-links a:hover {
-  color: var(--accent)
+/* Thin lime underline that draws in from left to right on hover */
+.lp-links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 1.5px;
+  background: var(--lime);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .3s ease
+}
+
+.lp-links a:hover::after,
+.lp-links a:focus-visible::after {
+  transform: scaleX(1)
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-links a::after {
+    transition: none
+  }
 }
 
 /* "Get started" menu in the top bar */
@@ -151,7 +191,6 @@
   transform: rotate(180deg)
 }
 
-/* Nearly solid: a blur inside the already-blurred top bar doesn't show */
 .lp-menu-list {
   position: absolute;
   top: calc(100% + 8px);
@@ -161,10 +200,10 @@
   gap: 2px;
   min-width: 290px;
   padding: 6px;
-  background: rgba(18, 20, 28, .96);
-  border: 1px solid var(--glass-line);
-  border-radius: 14px;
-  box-shadow: 0 18px 40px -12px rgba(0, 0, 0, .6)
+  background: var(--surface);
+  border: 1px solid var(--card-line);
+  border-radius: 16px;
+  box-shadow: 0 18px 40px -16px rgba(10, 42, 28, .25)
 }
 
 .lp-menu-list button,
@@ -185,18 +224,19 @@
 
 .lp-menu-list button:hover,
 .lp-menu-list a:hover {
-  background: rgba(255, 255, 255, .07)
+  background: var(--accent-soft)
 }
 
 .lp-menu-list .lp-icon {
   margin-top: 1px;
-  color: var(--accent)
+  color: var(--emerald)
 }
 
 .lp-menu-list strong {
   display: block;
   font-size: 14px;
-  font-weight: 600
+  font-weight: 500;
+  color: var(--ink)
 }
 
 .lp-menu-list small {
@@ -206,24 +246,35 @@
   color: var(--ink3)
 }
 
-.lp-hero {
-  padding-top: clamp(40px, 6vw, 80px)
+/* Hero: one column, the pitch on top and the illustration centered on the page below it. */
+.lp-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(32px, 3vw, 44px);
+  align-items: start;
+  padding-top: clamp(48px, 6vw, 88px)
 }
 
 .lp-hero h1 {
-  max-width: 19ch;
+  text-wrap: balance; /* even line lengths: no single word left alone on the last line */
   font-family: var(--display);
-  font-size: clamp(40px, 5vw, 64px);
+  font-size: clamp(60px, 3.4vw, 40px); /* small enough that each half fits on one row of the half-width column */
   font-weight: 500;
-  line-height: 1.06;
-  letter-spacing: -0.025em;
-  color: #fff
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  color: var(--ink)
+}
+
+/* Each half of the headline on its own single row, never wrapping */
+.lp-hero-line {
+  display: block;
+  white-space: nowrap
 }
 
 .lp-lead {
-  margin-top: 20px !important;
+  margin-top: 22px !important;
   max-width: 56ch;
-  font-size: 16.5px;
+  font-size: 17px;
   color: var(--ink2)
 }
 
@@ -240,6 +291,123 @@
   margin-top: 30px
 }
 
+.lp-hero .lp-lead {
+  margin-top: 56px !important; /* space between the headline and the lead */
+  max-width: 52ch;
+  text-wrap: pretty
+}
+
+/* The lead's closing line, on its own row */
+.lp-lead-line {
+  display: block;
+  margin-top: 6px
+}
+
+/* Hero actions: a line under the lead that runs from left to right across the page into the Explore button,
+   which sits at the right edge of the content (in line with "Get started" in the top bar) */
+.lp-hero .lp-actions {
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 14px
+}
+
+.lp-lead-rule {
+  flex: 1;
+  height: 1px;
+  border-radius: 1px;
+  background: var(--emerald);
+  transform: scaleX(0);
+  transform-origin: left
+}
+
+/* Lines that draw from left to right when they scroll into view. Landing.jsx (useLineReveal) adds .drawn to each
+   [data-line] element as it comes on screen, and takes it off again once it has gone back off the bottom, so the line
+   plays each time you scroll down to it. The hero line also waits for the loading screen to go. */
+.lp-lead-rule {
+  transition: transform 1.1s cubic-bezier(.65, 0, .35, 1)
+}
+
+.drawn .lp-lead-rule {
+  transform: scaleX(1)
+}
+
+/* The Explore button appears where the hero line ends, once it gets there */
+.lp-hero .lp-actions .lp-explore {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity .4s ease, transform .4s ease, background-color .15s ease, border-color .15s ease
+}
+
+.lp-hero .lp-actions.drawn .lp-explore {
+  opacity: 1;
+  transform: none;
+  transition-delay: .9s, .9s, 0s, 0s
+}
+
+/* Section lines (above "What LoanMart Insights can do" and the footer): drawn as ::before so they can grow */
+[data-line].lp-can-eyebrow,
+[data-line].lp-foot {
+  position: relative;
+  border-top: 0 /* the ::before line replaces the label's border */
+}
+
+[data-line].lp-can-eyebrow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--ink)
+}
+
+[data-line].lp-can-eyebrow::before,
+[data-line].lp-foot::before {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1.1s cubic-bezier(.65, 0, .35, 1)
+}
+
+.drawn.lp-can-eyebrow::before,
+.drawn.lp-foot::before {
+  transform: scaleX(1)
+}
+
+/* Reduced motion: every line and the button shown at once */
+@media (prefers-reduced-motion: reduce) {
+  .lp-lead-rule,
+  [data-line].lp-can-eyebrow::before,
+  [data-line].lp-foot::before {
+    transform: none;
+    transition: none
+  }
+
+  .lp-hero .lp-actions .lp-explore {
+    opacity: 1;
+    transform: none;
+    transition: none
+  }
+}
+
+/* "Explore" in the hero: a lime pill with ink green text, going to the options page.
+   Written as .btn.lp-explore so it beats .btn in styles.css, which loads after this file. */
+.btn.lp-explore {
+  background: var(--lime);
+  border-color: var(--lime);
+  color: var(--lime-ink)
+}
+
+.btn.lp-explore:hover {
+  background: color-mix(in srgb, var(--lime) 85%, var(--lime-ink)); /* a touch darker on hover */
+  border-color: color-mix(in srgb, var(--lime) 85%, var(--lime-ink));
+  color: var(--lime-ink)
+}
+
+/* The arrow points diagonally, from top left to bottom right */
+.lp-explore .lp-icon {
+  transform: rotate(45deg)
+}
+
 .lp-local {
   display: flex;
   align-items: center;
@@ -254,33 +422,71 @@
   font-weight: 600
 }
 
-/* Illustration: icon tiles on a connector line, feeding a list card and a detail card. */
+/* Illustration, in full: icon tiles on a connector line, feeding a list card and a detail card, then the report file.
+   Its three columns (source tiles, Columns card, detail card) have fixed widths and sit in the middle of the page.
+   The connector lines are measured, so they follow any size. */
 .lp-diagram {
+  position: relative;
   display: grid;
   grid-template-columns: 120px minmax(0, 290px) minmax(0, 424px);
-  align-items: start;
-  margin-top: 64px
+  justify-content: center;
+  align-items: start
 }
 
-.lp-diagram::before {
-  content: "";
-  position: absolute;
-  left: -40px;
-  top: 40px;
-  width: 360px;
-  height: 320px;
-  background: radial-gradient(closest-side, rgba(40, 140, 180, .45), transparent);
-  filter: blur(20px);
-  pointer-events: none
+/* Hero layout: the headline across the top, then the lead on the left and the illustration on the right, starting
+   level with each other, then the line and Explore button across the bottom. Stacked on narrower screens (below). */
+.lp-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 40px;
+  align-items: start
 }
 
+.lp-hero h1,
+.lp-hero .lp-actions {
+  grid-column: 1 / -1
+}
+
+.lp-hero .lp-diagram {
+  grid-column: 2;
+  grid-row: 2;
+  /* Icon tiles, Columns card, TotalBalance card */
+  grid-template-columns: 44px minmax(0, 280px) minmax(0, 284px);
+  column-gap: 48px; /* the same space between the icons and Columns, and between Columns and TotalBalance */
+  margin-top: 56px /* level with the lead, which has the same gap below the headline */
+}
+
+/* The gaps come from column-gap above, so no extra margins beside the tiles or the TotalBalance card */
+.lp-hero .lp-rail {
+  margin-right: 0
+}
+
+.lp-hero .lp-col3 {
+  margin-left: 0
+}
+
+@media (max-width:1000px) {
+  .lp-hero {
+    grid-template-columns: minmax(0, 1fr)
+  }
+
+  .lp-hero .lp-diagram {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: center;
+    margin-top: 48px
+  }
+}
+
+/* The source tiles: a column at the Columns card's lower left, feeding into it */
 .lp-rail {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 54px;
-  padding-top: 26px
+  align-self: end; /* level with the bottom of the Columns card */
+  margin: 0 14px 28px 0
 }
 
 .lp-rail .lp-tile {
@@ -300,23 +506,23 @@
   z-index: 0
 }
 
-/* The resting line */
+/* The resting line: a pale green hairline */
 .lp-wire {
   fill: none;
-  stroke: rgba(127, 211, 230, .55);
-  stroke-width: 1.6;
-  filter: drop-shadow(0 0 3px rgba(127, 211, 230, .45))
+  stroke: var(--wire);
+  stroke-width: 1
 }
 
-/* Light pulses travelling along each line, showing data flowing */
+/* Small lime beads travelling slowly along each line, showing data flowing */
 .lp-flow {
   fill: none;
-  stroke: #D2F3FA;
-  stroke-width: 2.6;
+  stroke: var(--lime);
+  stroke-width: 3.4;
   stroke-linecap: round;
-  stroke-dasharray: 2 16;
-  filter: drop-shadow(0 0 4px rgba(127, 211, 230, .9));
-  animation: lp-flow 1.4s linear infinite
+  stroke-dasharray: 0 18;
+  /* A fine ink edge, so lime dots still show on the light page */
+  filter: drop-shadow(0 0 .6px var(--lime-ink)) drop-shadow(0 0 .6px var(--lime-ink));
+  animation: lp-flow 2.2s linear infinite
 }
 
 @keyframes lp-flow {
@@ -327,10 +533,9 @@
 
 /* Dots where a line meets a tile or card */
 .lp-node {
-  fill: #0F1117;
-  stroke: #7FD3E6;
-  stroke-width: 1.5;
-  filter: drop-shadow(0 0 5px rgba(127, 211, 230, .8))
+  fill: var(--surface);
+  stroke: var(--data-4);
+  stroke-width: 1.5
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -342,6 +547,7 @@
 /* Output chip under the detail card: where the settings end up */
 .lp-output {
   z-index: 1;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -353,7 +559,7 @@
 }
 
 .lp-output .lp-icon {
-  color: var(--accent)
+  color: var(--emerald)
 }
 
 .lp-output small {
@@ -363,10 +569,7 @@
 
 .lp-list {
   padding: 16px 14px;
-  z-index: 1;
-  /* The list fades out at the bottom, as if it keeps going */
-  -webkit-mask-image: linear-gradient(#000 72%, transparent);
-  mask-image: linear-gradient(#000 72%, transparent)
+  z-index: 1
 }
 
 .lp-list .lp-card-title {
@@ -375,30 +578,15 @@
 }
 
 .lp-item {
+  position: relative;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: 12px;
   margin-top: 4px
 }
 
-.lp-item {
-  position: relative
-}
-
+/* The selected item: a soft mist fill */
 .lp-item.on {
-  background: linear-gradient(180deg, rgba(90, 150, 200, .32), rgba(50, 90, 140, .22));
-  border: 1px solid rgba(127, 211, 230, .22);
-  box-shadow: 0 0 40px rgba(64, 170, 205, .3), inset 0 1px 0 rgba(255, 255, 255, .08)
-}
-
-/* Light spilling out from the selected item, blurred through the glass */
-.lp-item.on::before {
-  content: "";
-  position: absolute;
-  inset: -30px -40px;
-  background: radial-gradient(closest-side, rgba(70, 170, 215, .35), transparent);
-  filter: blur(18px);
-  z-index: -1;
-  pointer-events: none
+  background: var(--mist)
 }
 
 .lp-item-name {
@@ -412,6 +600,9 @@
 
 .lp-item-meta {
   margin: 3px 0 0 26px !important;
+  white-space: nowrap; /* one line each, cut with … if the card gets very narrow */
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 11.5px;
   line-height: 1.45;
   color: var(--ink3)
@@ -429,8 +620,8 @@
   border-radius: 5px;
   font-size: 10.5px;
   font-weight: 600;
-  color: #F2C46D;
-  background: rgba(242, 196, 109, .14)
+  color: var(--emerald);
+  background: var(--badge-num-bg)
 }
 
 /* Right-hand column: the detail card with the output chip below it, set apart so the link line shows */
@@ -449,7 +640,7 @@
 
 .lp-detail .lp-card-title {
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--glass-line)
+  border-bottom: 1px solid var(--card-line)
 }
 
 .lp-kv {
@@ -471,7 +662,8 @@
 }
 
 .lp-kv dd.hi {
-  color: var(--accent)
+  color: var(--emerald);
+  font-weight: 500
 }
 
 .lp-sub {
@@ -486,10 +678,9 @@
 .lp-row {
   margin-top: 6px;
   padding: 9px 12px;
-  border-radius: 9px;
-  border: 1px solid rgba(255, 255, 255, .1);
-  background: rgba(255, 255, 255, .045);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  border-radius: 12px;
+  border: 1px solid var(--line2);
+  background: var(--raised);
   font-size: 12.5px;
   color: var(--ink2)
 }
@@ -509,9 +700,7 @@
 .lp-eyebrow {
   font-size: 13px;
   font-weight: 500;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--ink)
+  color: var(--emerald)
 }
 
 .lp-works-sub {
@@ -540,6 +729,154 @@
   color: var(--ink2)
 }
 
+/* "What you can do": a thin rule and small label across the top, then the four features side by side in one row
+   (two by two on tablets, one per row on phones) */
+.lp-can {
+  padding-top: clamp(48px, 7vw, 96px);
+  padding-bottom: clamp(48px, 7vw, 96px)
+}
+
+.lp-can-eyebrow {
+  padding-top: 12px;
+  border-top: 1px solid var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink)
+}
+
+.lp-can-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: clamp(24px, 3vw, 40px);
+  margin-top: clamp(40px, 5vw, 64px) /* same space under the corner label as in "How it works" */
+}
+
+/* One feature per cell */
+.lp-can-item {
+  padding: 8px 0 24px
+}
+
+.lp-can-art {
+  display: block;
+  width: 96px;
+  height: 96px;
+  color: var(--ink)
+}
+
+.lp-can-item h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  margin-top: 36px !important;
+  font-family: var(--display);
+  font-size: clamp(22px, 1.9vw, 26px);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  color: var(--ink)
+}
+
+.lp-can-soon {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--lime);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--lime-ink)
+}
+
+/* Bulleted list, one item per line, each after a small emerald dot */
+.lp-can-list {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  margin: 18px 0 0;
+  padding: 0
+}
+
+.lp-can-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 15px;
+  color: var(--ink)
+}
+
+.lp-can-list li::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--emerald);
+  margin-top: 8px /* level with the middle of the first line of text */
+}
+
+/* Tablets: two by two, the second row under a thin line */
+@media (max-width:1000px) {
+  .lp-can-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+  }
+
+  .lp-can-item:nth-of-type(n+3) {
+    padding-top: 48px;
+    border-top: 1px solid var(--ink)
+  }
+}
+
+/* Phones: one feature per row, each under its own line */
+@media (max-width:640px) {
+  .lp-can-grid {
+    grid-template-columns: minmax(0, 1fr)
+  }
+
+  .lp-can-item:nth-of-type(n+2) {
+    padding-top: 48px;
+    border-top: 1px solid var(--ink)
+  }
+}
+
+/* "How it works": a corner label under a thin line (like "LoanMart Insights" below it), then the steps and the
+   "Why" card side by side, both starting level */
+.lp-how {
+  padding-top: 0; /* its label sits right under the hero's line, which acts as this section's top line */
+  padding-bottom: clamp(24px, 3vw, 40px)
+}
+
+/* No line of its own: the hero line above (running into the Explore button) is this section's top line */
+/* Scrolled to from the top bar: stop a little higher, so the shared line and Explore button above the label show */
+.lp-page #how {
+  scroll-margin-top: 140px
+}
+
+.lp-how-label {
+  padding-top: 0;
+  border-top: 0
+}
+
+.lp-how-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(32px, 6vw, 80px);
+  align-items: start;
+  margin-top: clamp(40px, 5vw, 64px) /* space under the corner label */
+}
+
+.lp-how-grid .lp-steps {
+  margin-top: 0
+}
+
+@media (max-width:900px) {
+  .lp-how-grid {
+    grid-template-columns: 1fr
+  }
+}
+
 /* Two-column sections */
 .lp-split {
   display: grid;
@@ -551,12 +888,13 @@
 }
 
 .lp h2 {
+  text-wrap: balance;
   font-family: var(--display);
-  font-size: clamp(28px, 3.2vw, 40px);
+  font-size: clamp(34px, 3.8vw, 48px);
   font-weight: 500;
-  letter-spacing: -0.03em;
-  line-height: 1.12;
-  color: #fff
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  color: var(--ink)
 }
 
 .lp-steps {
@@ -573,7 +911,7 @@
   top: 20px;
   bottom: 20px;
   width: 1px;
-  background: linear-gradient(rgba(127, 211, 230, .5), rgba(127, 211, 230, .1))
+  background: var(--line)
 }
 
 .lp-steps li {
@@ -591,16 +929,15 @@
   height: 31px;
   border-radius: 50%;
   font-size: 13px;
-  font-weight: 600;
-  color: var(--accent);
-  background: var(--bg);
-  border: 1px solid rgba(127, 211, 230, .45);
-  box-shadow: 0 0 16px rgba(64, 170, 205, .25)
+  font-weight: 500;
+  color: var(--emerald);
+  background: var(--surface);
+  border: 1px solid var(--line)
 }
 
 .lp-steps h3,
 .lp-features h3 {
-  font-size: 15.5px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--ink);
   margin-bottom: 4px
@@ -609,7 +946,7 @@
 .lp-steps p,
 .lp-features p,
 .lp-copy {
-  font-size: 14.5px;
+  font-size: 15px;
   color: var(--ink2)
 }
 
@@ -631,13 +968,13 @@
 
 .lp-why>p {
   margin-top: 14px !important;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--ink2)
 }
 
 .lp-chips {
   list-style: none;
-  margin: 24px 0 28px;
+  margin: 24px 0 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
@@ -649,16 +986,14 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, .12);
-  background: linear-gradient(135deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .03));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1);
+  border-radius: 999px;
+  background: var(--bg);
   font-size: 13px;
   color: var(--ink)
 }
 
 .lp-chips .lp-icon {
-  color: var(--accent)
+  color: var(--emerald)
 }
 
 /* Feature cards */
@@ -677,7 +1012,7 @@
 }
 
 .lp-features li {
-  padding: 22px
+  padding: 24px
 }
 
 /* Template mock */
@@ -691,16 +1026,15 @@
 
 .lp-template .lp-card-title {
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--glass-line)
+  border-bottom: 1px solid var(--card-line)
 }
 
 .lp-field {
   margin-top: 14px;
   padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, .1);
-  background: rgba(255, 255, 255, .045);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06)
+  border-radius: 12px;
+  border: 1px solid var(--line2);
+  background: var(--raised)
 }
 
 .lp-field span {
@@ -711,31 +1045,42 @@
 }
 
 .lp-field code {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-ligatures: none; /* show SQL exactly as written: >= stays >= */
   font-size: 12.5px;
-  color: #F2C46D
+  color: var(--emerald)
 }
 
-/* Closing call to action and footer */
+/* Closing call to action and footer. The closing card is the landing page's one dark hero card (.hero in styles.css). */
 .lp-end {
   padding-top: 24px;
   padding-bottom: 48px
 }
 
+/* Centered: heading and text, with the buttons below them */
 .lp-end-card {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-  padding: clamp(24px, 4vw, 40px);
+  text-align: center;
+  gap: 24px;
+  padding: clamp(28px, 4vw, 48px);
   overflow: hidden
+}
+
+.lp-end-card .lp-start {
+  justify-content: center /* buttons stay centered when they wrap onto two rows */
+}
+
+.lp-end-card h2 {
+  color: #FFFFFF
 }
 
 .lp-end-card p {
   margin-top: 6px !important;
   color: var(--ink2);
-  font-size: 14px
+  font-size: 15px
 }
 
 .lp-foot {
@@ -746,9 +1091,25 @@
   flex-wrap: wrap;
   padding-top: 24px;
   padding-bottom: 36px;
-  border-top: 1px solid var(--line2);
   font-size: 13px;
   color: var(--ink3)
+}
+
+/* The footer's top line, inset by the .lp side padding so it lines up with the content like the page's other lines */
+.lp-foot::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: clamp(16px, 4vw, 40px);
+  right: clamp(16px, 4vw, 40px);
+  border-top: 1px solid var(--line2)
+}
+
+/* Phones: too narrow for a half on one row, so let it wrap */
+@media (max-width:560px) {
+  .lp-hero-line {
+    white-space: normal
+  }
 }
 
 @media (max-width:900px) {
@@ -756,8 +1117,10 @@
     display: none
   }
 
-  .lp-diagram {
+  .lp-diagram,
+  .lp-hero .lp-diagram {
     grid-template-columns: 1fr;
+    justify-self: stretch;
     gap: 16px
   }
 
@@ -766,7 +1129,8 @@
     display: none
   }
 
-  .lp-col3 {
+  .lp-col3,
+  .lp-hero .lp-col3 {
     margin: 0
   }
 
@@ -780,7 +1144,7 @@
   }
 }
 
-/* "Learn more" page (#/options): every way to use the app */
+/* "Explore" page (#/options): every way to use the app */
 .lp-brand a {
   display: flex;
   align-items: center;
@@ -793,9 +1157,9 @@
   font-family: var(--display);
   font-size: clamp(36px, 4.4vw, 56px);
   font-weight: 500;
-  letter-spacing: -0.025em;
-  line-height: 1.08;
-  color: #fff
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+  color: var(--ink)
 }
 
 .lp-options {
@@ -810,11 +1174,11 @@
 .lp-option {
   display: flex;
   flex-direction: column;
-  padding: 24px
+  padding: 28px
 }
 
 .lp-option h2 {
-  font-size: 22px;
+  font-size: 24px;
   margin-bottom: 6px
 }
 
@@ -827,7 +1191,7 @@
 }
 
 .lp-gets li::marker {
-  color: var(--accent)
+  color: var(--emerald)
 }
 
 .lp-needs {
@@ -862,7 +1226,7 @@
 .lp-compare td {
   text-align: left;
   padding: 12px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  border-bottom: 1px solid var(--line2);
   vertical-align: top
 }
 
@@ -872,8 +1236,9 @@
 }
 
 .lp-compare thead th {
-  color: #fff;
-  font-weight: 500
+  font-weight: 500;
+  color: var(--ink);
+  border-bottom-color: var(--line)
 }
 
 .lp-compare tbody th {

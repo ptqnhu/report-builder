@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@report-builder/shared": "1.0.0",
+    "lenis": "^1.3.27",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
