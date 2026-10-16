@@ -31,7 +31,8 @@ test("schema lists tables, views, columns and foreign keys, and is read once per
     { sch: "dbo", obj: "Loans", kind: "U ", col: "CustomerId", type: "int" },
     { sch: "rpt", obj: "ActiveLoans", kind: "V ", col: "LoanId", type: "int" },
   ], [{ fromTable: "dbo.Loans", fromCol: "CustomerId", toTable: "dbo.Customers", toCol: "Id" }]);
-  const text = await loadSchema(pool, { maxChars: 10_000 });
+  const { text, source } = await loadSchema(pool, { maxChars: 10_000 });
+  assert.equal(source, "database");
   assert.equal(text, [
     "dbo.Customers (table): Id int, Name nvarchar",
     "dbo.Loans (table): CustomerId int",
@@ -48,11 +49,11 @@ test("schema comes from the saved file for the database, ignoring case, without 
   const dir = await mkdtemp(join(tmpdir(), "schemas-"));
   await writeFile(join(dir, "AdventureWorks2022.txt"), "Sales.Customer (table): CustomerID int\n", "utf8");
   const pool = schemaPool([]);
-  assert.equal(await loadSchema(pool, { maxChars: 10_000, database: "adventureworks2022", dir }), "Sales.Customer (table): CustomerID int");
+  assert.deepEqual(await loadSchema(pool, { maxChars: 10_000, database: "adventureworks2022", dir }), { text: "Sales.Customer (table): CustomerID int", source: "file" });
   assert.equal(pool.queries.length, 0);
 
   const other = schemaPool([{ sch: "dbo", obj: "T", kind: "U", col: "A", type: "int" }]);
-  assert.equal(await loadSchema(other, { maxChars: 10_000, database: "Sales", dir }), "dbo.T (table): A int");
+  assert.deepEqual(await loadSchema(other, { maxChars: 10_000, database: "Sales", dir }), { text: "dbo.T (table): A int", source: "database" });
   assert.equal(other.queries.length, 2);
   await assert.rejects(loadSchema(schemaPool([]), { maxChars: 5, database: "AdventureWorks2022", dir }), (e) => e.status === 413);
 });

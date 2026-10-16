@@ -44,7 +44,8 @@ report-builder/
 │   │   │   ├── analyze.js      Guard + describe → columns
 │   │   │   ├── typeInference.js SQL Server type (+ column name) → display type
 │   │   │   ├── sqlParser.js    Finds the main table for the default title
-│   │   │   └── templateStore.js Saved templates (JSON file)
+│   │   │   ├── templateStore.js Saved templates (JSON file)
+│   │   │   └── activityLog.js  Sign-in and AI request log (LOG_DATABASE)
 │   │   ├── rdl/            SSRS export
 │   │   │   ├── buildRdl.js     Assembles the report definition
 │   │   │   ├── filters.js      App filters → RDL filters / report parameters
@@ -118,12 +119,33 @@ Environment variables (all optional):
 | `AI_EFFORT` | `high` | How hard it thinks: `low`, `medium`, `high`, `xhigh` or `max` |
 | `AI_TIMEOUT_SECONDS` | `180` | Longest the assistant may take to answer |
 | `AI_SCHEMA_MAX_CHARS` | `1500000` | Largest schema description the assistant may send |
+| `LOG_DATABASE` | off | SQL Server database for the activity log (sign-ins and AI requests), e.g. `ReportBuilderLog` |
+| `LOG_SERVER` | `localhost` | SQL Server that holds `LOG_DATABASE` |
+| `LOG_USER`, `LOG_PASSWORD` | none | SQL login for the log database. Without them the app signs in as the Windows account running it (local SQL Server only) |
+| `LOG_TRUST_SERVER_CERTIFICATE` | `true` for localhost | Accept the log server's certificate without checking it |
 
 These can also go in a `.env` file at the project root (for example `AI_EFFORT=medium`); it's ignored by git.
 
 With `AI_BACKEND=cli` (the default), the AI assistant needs Claude Code signed in on the computer running the app's server: run `claude` once and use `/login`. Its usage counts against that account. To switch to the Claude API, put `AI_BACKEND=api` and `ANTHROPIC_API_KEY=sk-ant-...` in `.env` and restart the server. The API backend also caches the schema between questions, which makes follow-ups cheaper.
 
 The assistant describes the database to Claude from a saved file in `server/schemas/` when there is one named after the database (`AdventureWorks2022.txt`, matched ignoring case); otherwise it reads the tables, columns and foreign keys from SQL Server. To save or refresh a file from a SQL Server on this computer (signs in as your Windows account), run `npm run schema:save -w server -- <database> [server]`, for example `npm run schema:save -w server -- AdventureWorks2022`. The file is plain text and can be edited by hand, for instance to add notes about what columns mean. Changes apply from the next connection to that database.
+
+### Activity log
+
+Set `LOG_DATABASE` and the server records, in that database:
+
+- `dbo.SignInLog`: every connect attempt, with the server, database, login, browser IP, SQL Server version, and whether it worked (with the error if not).
+- `dbo.AiRequestLog`: every Ask AI request, with who asked, what they typed, the query in the editor, where the schema came from (`file` or `database`), the backend and model, the SQL and explanation returned, how long it took, and the error if it failed.
+
+Create the database once (`CREATE DATABASE ReportBuilderLog`); the app creates the tables on first use, so its login needs `db_owner` there, or create the tables yourself and grant `INSERT` only. Times are UTC. Writing the log never slows down or fails a request: if the log database is unreachable, the server prints the error and carries on. For example:
+
+```sql
+SELECT CAST(LoggedAt AS date) AS Day, LoginName, COUNT(*) AS Requests,
+       SUM(CASE WHEN Succeeded = 0 THEN 1 ELSE 0 END) AS Failed, AVG(DurationMs) AS AvgMs
+FROM ReportBuilderLog.dbo.AiRequestLog
+GROUP BY CAST(LoggedAt AS date), LoginName
+ORDER BY Day DESC;
+```
 
 ## Tests
 
@@ -160,6 +182,7 @@ An expired or unknown `connectionId` returns **410**; the UI then asks the user 
 - **Serve the app over HTTPS**, since passwords are sent from the browser to the app's server when connecting.
 - Passwords live only in the server's memory, inside the connection pool, and are dropped when the connection closes or goes idle. They're never logged, returned to the browser, or written into `.rdl` files.
 - **The AI assistant** sends the database's table, view and column names and types, plus what the user types, to Anthropic, through the Claude Code CLI or the Claude API depending on `AI_BACKEND`. It never sends row data, and the CLI runs with every tool turned off, so it can't read files or run commands. If schema names mustn't leave your network, don't sign Claude Code in on the server and don't set an API key.
+- **The activity log** stores what users type into Ask AI and the queries they get back, but never passwords or row data. Limit who can read `LOG_DATABASE`.
 - The app has no user accounts of its own. Run it on your internal network, or put it behind your existing single sign-on.
 
 ## Uploading to SSRS

@@ -4,6 +4,7 @@ import { requireString, optionalString } from "../lib/validate.js";
 import { settings } from "../lib/config.js";
 import { loadSchema } from "../services/ai/schema.js";
 import { writeQuery } from "../services/ai/queryWriter.js";
+import { noActivityLog } from "../services/activityLog.js";
 
 /** Checks the conversation: alternating turns, starting and ending with the user. */
 function readMessages(list) {
@@ -18,7 +19,7 @@ function readMessages(list) {
   });
 }
 
-export default function aiRoutes(connections) {
+export default function aiRoutes(connections, activityLog = noActivityLog) {
   const router = Router();
 
   /**
@@ -26,14 +27,31 @@ export default function aiRoutes(connections) {
    * -> { sql, explanation }. `sql` is what's in the editor now, so "add a filter for…" works on it.
    */
   router.post("/ai/query", asyncHandler(async (req, res) => {
-    const { pool, info } = connections.get(requireString(req.body?.connectionId, "connectionId", { max: 64, allowEmpty: false }));
+    const connectionId = requireString(req.body?.connectionId, "connectionId", { max: 64, allowEmpty: false });
+    const { pool, info } = connections.get(connectionId);
     const messages = readMessages(req.body?.messages);
     if (messages.at(-1).role !== "user") throw new HttpError(400, "The conversation is out of order.");
+    const request = messages.at(-1).content;
     const current = optionalString(req.body?.sql, "sql", 200_000).trim();
     if (current) messages.at(-1).content += `\n\nThe query in the editor right now:\n\`\`\`sql\n${current}\n\`\`\``;
 
-    const schema = await loadSchema(pool, { maxChars: settings.aiSchemaMaxChars, database: info.database });
-    res.json(await writeQuery({ schema, database: info.database, messages }, { backend: settings.aiBackend, model: settings.aiModel, effort: settings.aiEffort, timeoutMs: settings.aiTimeoutMs }));
+    const started = Date.now();
+    const entry = {
+      ConnectionId: connectionId, ServerName: info.server, DatabaseName: info.database, LoginName: info.user, ClientIp: req.ip,
+      Turn: Math.ceil(messages.length / 2), Request: request, EditorSql: current || null,
+      Backend: settings.aiBackend, Model: settings.aiModel, Effort: settings.aiEffort,
+    };
+    try {
+      const schema = await loadSchema(pool, { maxChars: settings.aiSchemaMaxChars, database: info.database });
+      Object.assign(entry, { SchemaSource: schema.source, SchemaChars: schema.text.length });
+      const answer = await writeQuery({ schema: schema.text, database: info.database, messages },
+        { backend: settings.aiBackend, model: settings.aiModel, effort: settings.aiEffort, timeoutMs: settings.aiTimeoutMs });
+      activityLog.aiRequest({ ...entry, ResultSql: answer.sql, Explanation: answer.explanation, DurationMs: Date.now() - started, Succeeded: true });
+      res.json(answer);
+    } catch (e) {
+      activityLog.aiRequest({ ...entry, DurationMs: Date.now() - started, Succeeded: false, ErrorStatus: e.status || 500, ErrorMessage: String(e.message).slice(0, 4000) });
+      throw e;
+    }
   }));
 
   return router;

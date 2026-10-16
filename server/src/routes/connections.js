@@ -3,12 +3,13 @@ import { asyncHandler } from "../lib/errors.js";
 import { buildConfig } from "../services/db/connectionConfig.js";
 import { listLocalInstances } from "../services/db/localInstances.js";
 import { settings } from "../lib/config.js";
+import { noActivityLog } from "../services/activityLog.js";
 
 /** True when the browser runs on the same computer as this app (so "sign in as this computer" is the user's own account). */
 const fromThisComputer = (req) => ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress);
 
 /** Connection routes. The password is used once to open the pool and never sent back. */
-export default function connectionRoutes(connections) {
+export default function connectionRoutes(connections, activityLog = noActivityLog) {
   const router = Router();
 
   /** GET /api/local-servers -> [{ server, running }] SQL Server instances on this computer, for local browsers only */
@@ -27,7 +28,16 @@ export default function connectionRoutes(connections) {
   /** POST /api/connections { server, database, authType, user, password, encrypt, trustServerCertificate } */
   router.post("/connections", asyncHandler(async (req, res) => {
     const { config, summary } = buildConfig(req.body, { fromThisComputer: fromThisComputer(req) });
-    const { id, info } = await connections.open(config, summary);
+    const entry = { ServerName: summary.server, DatabaseName: summary.database, AuthType: summary.authType, LoginName: summary.user || null, ClientIp: req.ip };
+    let opened;
+    try {
+      opened = await connections.open(config, summary);
+    } catch (e) {
+      activityLog.signIn({ ...entry, Succeeded: false, ErrorMessage: String(e.message).slice(0, 4000) });
+      throw e;
+    }
+    const { id, info } = opened;
+    activityLog.signIn({ ...entry, ConnectionId: id, LoginName: info.user || null, ServerVersion: info.version || null, Succeeded: true });
     res.status(201).json({ connectionId: id, ...info });
   }));
 

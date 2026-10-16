@@ -65,8 +65,9 @@ export async function readSchemaFile(database, dir = SCHEMA_DIR) {
 
 /**
  * Describes the database's tables, views, columns and foreign keys as plain text for the AI.
- * Uses the saved schema file for `database` when there is one; otherwise asks SQL Server.
+ * Uses the saved schema file for `database` when there is one (source "file"); otherwise asks SQL Server (source "database").
  * Only names and types are read; no row data leaves the database.
+ * @returns {Promise<{text: string, source: "file"|"database"}>}
  */
 export async function loadSchema(pool, { maxChars, database, dir } = {}) {
   if (cache.has(pool)) return cache.get(pool);
@@ -75,6 +76,7 @@ export async function loadSchema(pool, { maxChars, database, dir } = {}) {
   if (text.length > maxChars) {
     throw new HttpError(413, `The database has too many tables (${tables}) to describe to the AI assistant. Raise AI_SCHEMA_MAX_CHARS to allow it.`);
   }
-  cache.set(pool, text);
-  return text;
+  const schema = { text, source: saved ? "file" : "database" };
+  cache.set(pool, schema);
+  return schema;
 }
