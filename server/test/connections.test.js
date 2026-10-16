@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { buildConfig, parseServer } from "../src/services/db/connectionConfig.js";
 import { createConnectionManager } from "../src/services/db/connectionManager.js";
 import { parseInstanceNames, serverNameFor } from "../src/services/db/localInstances.js";
-import { sqlErrorMessage } from "../src/services/db/errors.js";
+import { sqlErrorMessage, friendlyConnectError } from "../src/services/db/errors.js";
+import { asError } from "../src/services/db/mssqlDriver.js";
 import { fakePool } from "./helpers/fakeSqlServer.js";
 
 test("parses server names with instances and ports", () => {
@@ -74,6 +75,24 @@ test("finds local instance names in reg query output", () => {
 test("SQL errors drop the ODBC driver's bracketed prefix", () => {
   const e = new Error("[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Incorrect syntax near the keyword 'FROM'.");
   assert.equal(sqlErrorMessage(e), "SQL Server says: Incorrect syntax near the keyword 'FROM'.");
+});
+
+test("ODBC sign-in failures keep SQL Server's messages, and a missing database isn't blamed on the password", () => {
+  const odbc = {
+    message: "[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Login failed for user 'PC\me'.", code: 18456,
+    details: [
+      { message: "[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Login failed for user 'PC\me'." },
+      { message: "[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Cannot open database \"NoSuchDb\" requested by the login. The login failed." },
+    ],
+  };
+  const e = asError(odbc);
+  assert.ok(e instanceof Error);
+  assert.equal(e.code, 18456);
+  assert.match(e.message, /Login failed.*Cannot open database "NoSuchDb"/);
+  assert.match(friendlyConnectError(e), /database can't be opened/);
+  assert.equal(friendlyConnectError(asError({ message: "[Microsoft][ODBC Driver 18 for SQL Server]Something odd" })), "Couldn't connect. Something odd");
+  const real = new Error("x");
+  assert.equal(asError(real), real);
 });
 
 test("connection failures become friendly messages", async () => {
