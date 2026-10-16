@@ -53,11 +53,11 @@ const WORKS_WITH = [
 
 /** Columns shown in the hero illustration, like the builder's Columns and Data types steps. */
 const COLUMNS = [
-  { name: "OrderID", type: "Integer", sql: "int" },
-  { name: "Customer", type: "Text", sql: "nvarchar(100)" },
-  { name: "Revenue", type: "Currency", sql: "decimal(19,4)", selected: true },
-  { name: "OrderDate", type: "Date", sql: "date" },
-  { name: "IsPaid", type: "Yes/No", sql: "bit" },
+  { name: "LoanNumber", type: "Integer", sql: "int" },
+  { name: "Borrower", type: "Text", sql: "nvarchar(100)" },
+  { name: "TotalBalance", type: "Currency", sql: "decimal(19,4)", selected: true },
+  { name: "OpenDate", type: "Date", sql: "date" },
+  { name: "IsPrimaryBorrower", type: "Yes/No", sql: "bit" },
 ];
 
 /** Smooth S-curve between two points, leaving and entering horizontally. */
@@ -68,7 +68,7 @@ const curve = ([x1, y1], [x2, y2]) => {
 
 /**
  * Measures the illustration and returns its connector lines: a spine between the source tiles, a branch from
- * each tile into the Columns card, a link from the selected Revenue row to its detail card, and a drop to the
+ * each tile into the Columns card, a link from the selected TotalBalance row to its detail card, and a drop to the
  * .rdl output chip. Points come from the real elements, so the lines stay attached whatever the fonts or width.
  * Called from Diagram, whose layout effect runs after every ref in it is attached.
  */
@@ -157,7 +157,7 @@ function Diagram() {
 
       <div className="lp-col3">
         <div ref={part("detail")} className="lp-card lp-detail">
-          <p ref={part("detailTitle")} className="lp-card-title"><span className="lp-badge">C</span> Revenue</p>
+          <p ref={part("detailTitle")} className="lp-card-title"><span className="lp-badge">C</span> TotalBalance</p>
           <dl className="lp-kv">
             <div><dt>SQL type</dt><dd>decimal(19,4)</dd></div>
             <div><dt>Shown as</dt><dd className="hi">Currency</dd></div>
@@ -165,12 +165,12 @@ function Diagram() {
             <div><dt>Decimals</dt><dd>2</dd></div>
           </dl>
           <p className="lp-sub"><Icon name="filter" size={13} /> Filter</p>
-          <div className="lp-row">Revenue is at least <strong>$1,000</strong></div>
+          <div className="lp-row">TotalBalance is at least <strong>$1,000</strong></div>
           <p className="lp-sub"><Icon name="search" size={13} /> Sort</p>
-          <div className="lp-row">Revenue, highest first</div>
+          <div className="lp-row">TotalBalance, highest first</div>
         </div>
         <div ref={part("output")} className="lp-card lp-output">
-          <Icon name="file" size={15} /> Revenue report.rdl <small>Ready for SSRS</small>
+          <Icon name="file" size={15} /> Loan Balances.rdl <small>Ready for SSRS</small>
         </div>
       </div>
     </section>
