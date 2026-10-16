@@ -1,5 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { loadSchema } from "../src/services/ai/schema.js";
 import { writeQuery } from "../src/services/ai/queryWriter.js";
 
@@ -39,6 +42,19 @@ test("schema lists tables, views, columns and foreign keys, and is read once per
   ].join("\n"));
   await loadSchema(pool, { maxChars: 10_000 });
   assert.equal(pool.queries.length, 2);
+});
+
+test("schema comes from the saved file for the database, ignoring case, without querying", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "schemas-"));
+  await writeFile(join(dir, "AdventureWorks2022.txt"), "Sales.Customer (table): CustomerID int\n", "utf8");
+  const pool = schemaPool([]);
+  assert.equal(await loadSchema(pool, { maxChars: 10_000, database: "adventureworks2022", dir }), "Sales.Customer (table): CustomerID int");
+  assert.equal(pool.queries.length, 0);
+
+  const other = schemaPool([{ sch: "dbo", obj: "T", kind: "U", col: "A", type: "int" }]);
+  assert.equal(await loadSchema(other, { maxChars: 10_000, database: "Sales", dir }), "dbo.T (table): A int");
+  assert.equal(other.queries.length, 2);
+  await assert.rejects(loadSchema(schemaPool([]), { maxChars: 5, database: "AdventureWorks2022", dir }), (e) => e.status === 413);
 });
 
 test("schema refuses databases too large to send, and empty ones", async () => {

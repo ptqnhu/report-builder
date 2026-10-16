@@ -1,3 +1,6 @@
+import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { HttpError } from "../../lib/errors.js";
 import { sqlErrorMessage } from "../db/errors.js";
 
@@ -17,15 +20,14 @@ JOIN sys.columns pc ON pc.object_id = k.parent_object_id AND pc.column_id = k.pa
 JOIN sys.columns rc ON rc.object_id = k.referenced_object_id AND rc.column_id = k.referenced_column_id
 ORDER BY fromTable, toTable`;
 
+/** Saved schema descriptions, one `<database>.txt` per database, read instead of querying the database. */
+export const SCHEMA_DIR = fileURLToPath(new URL("../../../schemas/", import.meta.url));
+
 /** One schema text per connection pool, so follow-up questions reuse it (and hit the AI's prompt cache). */
 const cache = new WeakMap();
 
-/**
- * Describes the database's tables, views, columns and foreign keys as plain text for the AI.
- * Only names and types are read; no row data leaves the database.
- */
-export async function loadSchema(pool, { maxChars }) {
-  if (cache.has(pool)) return cache.get(pool);
+/** Reads the database's tables, views, columns and foreign keys from SQL Server as plain text. */
+export async function querySchema(pool) {
   let cols, keys;
   try {
     cols = (await pool.request().query(COLUMNS_SQL)).recordset || [];
@@ -43,10 +45,35 @@ export async function loadSchema(pool, { maxChars }) {
   }
   const lines = [...objects].map(([name, o]) => `${name} (${o.kind}): ${o.cols.join(", ")}`);
   if (keys.length) lines.push("", "Foreign keys:", ...keys.map((k) => `${k.fromTable}.${k.fromCol} -> ${k.toTable}.${k.toCol}`));
+  return { text: lines.join("\n"), tables: objects.size };
+}
 
-  const text = lines.join("\n");
+/**
+ * The saved schema file for this database, or null if there isn't one.
+ * Matched against the folder listing (ignoring case) so a database name is never used as a path.
+ */
+export async function readSchemaFile(database, dir = SCHEMA_DIR) {
+  if (!database) return null;
+  let files;
+  try { files = await readdir(dir); } catch { return null; }
+  const want = `${database}.txt`.toLowerCase();
+  const file = files.find((f) => f.toLowerCase() === want);
+  if (!file) return null;
+  const text = (await readFile(join(dir, file), "utf8")).trim();
+  return text || null;
+}
+
+/**
+ * Describes the database's tables, views, columns and foreign keys as plain text for the AI.
+ * Uses the saved schema file for `database` when there is one; otherwise asks SQL Server.
+ * Only names and types are read; no row data leaves the database.
+ */
+export async function loadSchema(pool, { maxChars, database, dir } = {}) {
+  if (cache.has(pool)) return cache.get(pool);
+  const saved = await readSchemaFile(database, dir);
+  const { text, tables } = saved ? { text: saved, tables: saved.split("\n").filter((l) => / \((table|view)\): /.test(l)).length } : await querySchema(pool);
   if (text.length > maxChars) {
-    throw new HttpError(413, `The database has too many tables (${objects.size}) to describe to the AI assistant. Raise AI_SCHEMA_MAX_CHARS to allow it.`);
+    throw new HttpError(413, `The database has too many tables (${tables}) to describe to the AI assistant. Raise AI_SCHEMA_MAX_CHARS to allow it.`);
   }
   cache.set(pool, text);
   return text;

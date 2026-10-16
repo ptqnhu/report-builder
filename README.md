@@ -53,6 +53,8 @@ report-builder/
 │   │   │   └── xml.js          Escaping, names, units
 │   │   └── lib/            Settings (config.js), errors and input validation
 │   ├── test/               node:test unit tests (a fake SQL Server is in test/helpers)
+│   ├── schemas/            Saved schemas for the AI assistant, one <database>.txt each
+│   ├── scripts/            saveSchema.js writes a file in schemas/ from a live database
 │   └── data/               templates.json is written here
 │
 └── client/                 React + Vite UI
@@ -120,6 +122,8 @@ Environment variables (all optional):
 These can also go in a `.env` file at the project root (for example `AI_EFFORT=medium`); it's ignored by git.
 
 With `AI_BACKEND=cli` (the default), the AI assistant needs Claude Code signed in on the computer running the app's server: run `claude` once and use `/login`. Its usage counts against that account. To switch to the Claude API, put `AI_BACKEND=api` and `ANTHROPIC_API_KEY=sk-ant-...` in `.env` and restart the server. The API backend also caches the schema between questions, which makes follow-ups cheaper.
+
+The assistant describes the database to Claude from a saved file in `server/schemas/` when there is one named after the database (`AdventureWorks2022.txt`, matched ignoring case); otherwise it reads the tables, columns and foreign keys from SQL Server. To save or refresh a file from a SQL Server on this computer (signs in as your Windows account), run `npm run schema:save -w server -- <database> [server]`, for example `npm run schema:save -w server -- AdventureWorks2022`. The file is plain text and can be edited by hand, for instance to add notes about what columns mean. Changes apply from the next connection to that database.
 
 ## Tests
 

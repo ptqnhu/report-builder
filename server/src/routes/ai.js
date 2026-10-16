@@ -32,7 +32,7 @@ export default function aiRoutes(connections) {
     const current = optionalString(req.body?.sql, "sql", 200_000).trim();
     if (current) messages.at(-1).content += `\n\nThe query in the editor right now:\n\`\`\`sql\n${current}\n\`\`\``;
 
-    const schema = await loadSchema(pool, { maxChars: settings.aiSchemaMaxChars });
+    const schema = await loadSchema(pool, { maxChars: settings.aiSchemaMaxChars, database: info.database });
     res.json(await writeQuery({ schema, database: info.database, messages }, { backend: settings.aiBackend, model: settings.aiModel, effort: settings.aiEffort, timeoutMs: settings.aiTimeoutMs }));
   }));
 

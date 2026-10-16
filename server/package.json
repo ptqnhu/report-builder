@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
-    "test": "node --test \"test/**/*.test.js\""
+    "test": "node --test \"test/**/*.test.js\"",
+    "schema:save": "node scripts/saveSchema.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
