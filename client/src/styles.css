@@ -2410,3 +2410,352 @@ html {
   padding: 6px 4px;
   font-size: 12.5px
 }
+
+/* Charts step: headline tiles, then the suggested charts in a two-column grid (trend lines take the full width).
+   Marks carry the series colour; every label and value stays in the ink tokens. */
+.ch-results {
+  margin-top: 24px
+}
+
+.ch-results .ch-results-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 28px 0 12px
+}
+
+.ch-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px
+}
+
+.ch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px
+}
+
+/* Tiles and chart cards share the .panel look (white card, faint edge and shadow) */
+.ch-card {
+  margin: 0;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--card-line);
+  box-shadow: var(--card-shadow);
+  border-radius: 16px;
+  padding: 20px 22px 22px
+}
+
+/* Headline tile: label, big number, note, spaced by the grid rather than margins */
+.ch-card.ch-tile {
+  display: grid;
+  gap: 2px;
+  align-content: start;
+  padding: 16px 20px
+}
+
+.ch-tile-label {
+  font-size: 13px;
+  color: var(--ink2)
+}
+
+.ch-tile-value {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  font-variant-numeric: proportional-nums
+}
+
+.ch-tile-note {
+  font-size: 12.5px;
+  color: var(--ink3)
+}
+
+.ch-card.wide {
+  grid-column: 1 / -1
+}
+
+.ch-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px
+}
+
+.ch-head h3 {
+  font-size: 15px;
+  font-weight: 600
+}
+
+.ch-head .muted {
+  font-size: 13px
+}
+
+.ch-head .seg {
+  flex: none
+}
+
+/* Ranked bars: name, then the bar with its value at the tip. Bars are 20px, square at zero, rounded at the end. */
+.ch-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 2px
+}
+
+.ch-bar-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 34%) 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 3px 6px;
+  border-radius: 6px
+}
+
+.ch-bar-row.on {
+  background: var(--accent-soft)
+}
+
+.ch-bar-name {
+  font-size: 13px;
+  color: var(--ink2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+.ch-bar-track {
+  display: flex;
+  align-items: center;
+  min-width: 0
+}
+
+.ch-bar-gap {
+  flex: none
+}
+
+.ch-bar {
+  flex: none;
+  height: 20px;
+  min-width: 2px;
+  border-radius: 0 4px 4px 0
+}
+
+.ch-bar.neg {
+  border-radius: 4px 0 0 4px
+}
+
+.ch-bar-value {
+  flex: none;
+  padding-left: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap
+}
+
+/* Share: one 100% bar, 2px white gaps between the parts, legend underneath */
+.ch-share-bar {
+  display: flex;
+  gap: 2px;
+  height: 24px
+}
+
+.ch-share-bar span {
+  flex-basis: 0;
+  min-width: 3px;
+  transition: opacity .15s
+}
+
+.ch-share-bar span:first-child {
+  border-radius: 4px 0 0 4px
+}
+
+.ch-share-bar span:last-child {
+  border-radius: 0 4px 4px 0
+}
+
+.ch-share-bar span.dim {
+  opacity: .35
+}
+
+.ch-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--ink2)
+}
+
+.ch-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0
+}
+
+.ch-legend-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px
+}
+
+.ch-share-legend {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  margin-top: 14px
+}
+
+.ch-share-legend li {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto 64px;
+  gap: 10px;
+  padding: 3px 6px;
+  border-radius: 6px
+}
+
+.ch-share-legend li.on {
+  background: var(--accent-soft)
+}
+
+.ch-share-legend strong {
+  color: var(--ink);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums
+}
+
+.ch-share-legend .muted {
+  text-align: right;
+  font-variant-numeric: tabular-nums
+}
+
+.ch-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px
+}
+
+.ch-key {
+  display: inline-block;
+  flex: none;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px
+}
+
+/* Trend lines: hairline grid, 2px lines, crosshair and tooltip on hover */
+.ch-line {
+  position: relative;
+  min-width: 0
+}
+
+.ch-line svg {
+  display: block;
+  overflow: visible
+}
+
+.ch-gridline {
+  stroke: var(--line2);
+  stroke-width: 1
+}
+
+.ch-zero {
+  stroke: var(--hover-line);
+  stroke-width: 1
+}
+
+.ch-cross {
+  stroke: var(--ink3);
+  stroke-width: 1
+}
+
+.ch-tick {
+  fill: var(--ink3);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums
+}
+
+.ch-end {
+  fill: var(--ink);
+  font-size: 12.5px;
+  font-weight: 500
+}
+
+.ch-tip {
+  position: absolute;
+  pointer-events: none;
+  min-width: 170px;
+  max-width: 260px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px -12px rgba(10, 42, 28, .35);
+  padding: 8px 12px;
+  font-size: 12.5px
+}
+
+.ch-tip p {
+  display: flex;
+  align-items: center;
+  gap: 6px
+}
+
+.ch-tip strong {
+  margin-left: auto;
+  padding-left: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums
+}
+
+.ch-tip .ch-tip-head {
+  color: var(--ink2);
+  margin-bottom: 4px
+}
+
+/* Table view of a chart */
+.ch-table-wrap {
+  max-height: 320px;
+  overflow: auto
+}
+
+.ch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums
+}
+
+.ch-table th,
+.ch-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line2);
+  text-align: right;
+  white-space: nowrap
+}
+
+.ch-table th:first-child,
+.ch-table td:first-child {
+  text-align: left
+}
+
+.ch-table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  font-weight: 600;
+  color: var(--ink2)
+}
+
+@media (max-width: 860px) {
+  .ch-grid {
+    grid-template-columns: minmax(0, 1fr)
+  }
+}

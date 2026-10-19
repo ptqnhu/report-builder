@@ -45,10 +45,14 @@ export const api = {
   connect: (details) => request("/connections", { method: "POST", body: details }),
   disconnect: (id, { keepalive = false } = {}) => request(`/connections/${encodeURIComponent(id)}`, { method: "DELETE", keepalive }),
   analyze: (connectionId, sql) => request("/analyze", { method: "POST", body: { connectionId, sql } }),
-  preview: (connectionId, sql) => request("/preview", { method: "POST", body: { connectionId, sql } }),
+  /** all: every row (up to a safety ceiling, for charts) rather than the table preview's first few. */
+  preview: (connectionId, sql, { all = false } = {}) => request("/preview", { method: "POST", body: { connectionId, sql, all } }),
   count: (connectionId, sql) => request("/count", { method: "POST", body: { connectionId, sql } }),
-  /** messages: [{role: "user", content} | {role: "assistant", sql, explanation}]. Returns { sql, explanation }. */
-  aiQuery: (connectionId, messages, sql) => request("/ai/query", { method: "POST", body: { connectionId, messages, sql } }),
+  /**
+   * messages: [{role: "user", content} | {role: "assistant", sql, explanation}]. Returns { sql, explanation }.
+   * purpose "charts" asks for a summarised query that charts well.
+   */
+  aiQuery: (connectionId, messages, sql, purpose) => request("/ai/query", { method: "POST", body: { connectionId, messages, sql, purpose } }),
   rdl: (payload) => request("/rdl", { method: "POST", body: payload }),
   exportFile,
   listTemplates: () => request("/templates"),

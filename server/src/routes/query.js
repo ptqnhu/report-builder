@@ -20,12 +20,16 @@ export default function queryRoutes(connections) {
     res.json(await analyzeQuery(pool, sql));
   }));
 
-  /** POST /api/preview { connectionId, sql } -> { rows, truncated, limit } */
+  /**
+   * POST /api/preview { connectionId, sql, all? } -> { rows, truncated, limit }
+   * The table preview gets the first few rows; `all: true` (charts) gets every row, up to a safety ceiling.
+   */
   router.post("/preview", asyncHandler(async (req, res) => {
     const { pool, sql } = read(req.body);
     const problem = checkReadOnly(sql);
     if (problem) throw new HttpError(422, problem);
-    res.json(await previewQuery(pool, sql, { limit: settings.previewRowLimit, timeoutMs: settings.queryTimeoutMs }));
+    const limit = req.body?.all === true ? settings.chartRowLimit : settings.previewRowLimit;
+    res.json(await previewQuery(pool, sql, { limit, timeoutMs: settings.queryTimeoutMs }));
   }));
 
   /** POST /api/count { connectionId, sql } -> { count }: every row the query returns, not just the preview's */

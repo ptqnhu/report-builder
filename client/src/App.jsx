@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_TPL, DEFAULT_EXPORT, effectiveColumns, keyBy, applyFilters, prettify, liveSlicers, suggestSlicers, applySlicers, describeSlices } from "@report-builder/shared";
 import { api } from "./api.js";
-import { STEPS, FLOWS, SHARED_STEPS, KIND_NAMES } from "./steps/steps.js";
+import { STEPS, FLOWS, sharedSteps, KIND_NAMES } from "./steps/steps.js";
 import StepRail from "./components/StepRail.jsx";
 import ExportStep from "./steps/ExportStep.jsx";
 import ConnectStep from "./steps/ConnectStep.jsx";
@@ -10,13 +10,14 @@ import ColumnsStep from "./steps/ColumnsStep.jsx";
 import TemplateStep from "./steps/TemplateStep.jsx";
 import DetailsStep from "./steps/DetailsStep.jsx";
 import ReportStep from "./steps/ReportStep.jsx";
+import ChartsStep from "./steps/ChartsStep.jsx";
 import { usePreviewRows } from "./hooks/usePreviewRows.js";
 import { useRdlExport } from "./hooks/useRdlExport.js";
 import { sortRows } from "./utils/table.js";
 
 const EMPTY_ANALYSIS = { columns: [], table: null, key: null };
 
-/** The builder. `kind` ("adhoc" or "ssrs") is picked on the landing page and decides the steps after Columns. */
+/** The builder. `kind` ("adhoc", "ssrs" or "charts") is picked on the landing page and decides the steps. */
 export default function App({ kind }) {
   // Navigation. `step` is a step id; `reached` is how far along the flow the user has got (an index into it).
   const flow = FLOWS[kind];
@@ -30,6 +31,7 @@ export default function App({ kind }) {
   const [connection, setConnection] = useState(null);
   const [sql, setSql] = useState("");
   const [aiChat, setAiChat] = useState([]); // the conversation with the AI query assistant
+  const [chartChat, setChartChat] = useState([]); // the conversation on the Charts step
   const [analysis, setAnalysis] = useState(EMPTY_ANALYSIS);
   const [tpl, setTpl] = useState(DEFAULT_TPL);
   const [title, setTitle] = useState("");
@@ -51,11 +53,12 @@ export default function App({ kind }) {
 
   const go = (id) => { setError(""); setStep(id); setReached((r) => Math.max(r, at(id))); };
 
-  /** Switching kind keeps the shared steps (connection, query, columns) but not the old kind's own steps. */
+  /** Switching kind keeps the steps both kinds share (connection, query, columns) but not the old kind's own steps. */
   const lastKind = useRef(kind);
   const convertTo = useRef(null); // the step to open after "Convert to SSRS report"
   useEffect(() => {
     if (lastKind.current === kind) return;
+    const shared = sharedSteps(FLOWS[lastKind.current], FLOWS[kind]);
     lastKind.current = kind;
     const target = convertTo.current;
     convertTo.current = null;
@@ -65,14 +68,14 @@ export default function App({ kind }) {
       setReached(FLOWS[kind].indexOf(target));
       return;
     }
-    setReached((r) => Math.min(r, SHARED_STEPS - 1));
-    if (!FLOWS[kind].includes(step)) setStep(FLOWS[kind][SHARED_STEPS - 1]);
+    setReached((r) => Math.min(r, shared - 1));
+    if (!FLOWS[kind].includes(step)) setStep(FLOWS[kind][shared - 1]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind]);
 
-  /** Ad hoc → SSRS: same connection, query and columns; carry on from the first SSRS-only step. */
-  function convertToSsrs() {
-    convertTo.current = "template";
+  /** On to an SSRS report with the same connection, query and columns, opening at `target`. */
+  function convertToSsrs(target) {
+    convertTo.current = target;
     location.hash = "#/build/ssrs";
     window.scrollTo(0, 0);
   }
@@ -90,6 +93,7 @@ export default function App({ kind }) {
     setConnection(conn);
     setAnalysis(EMPTY_ANALYSIS); // a new database means the query must be read again
     setAiChat([]);
+    setChartChat([]);
     setReached(at("connect"));
     setExp((e) => ({ ...e, server: conn.server, database: conn.database, dsAuth: conn.authType === "sql" ? "sql" : "windows" }));
     setError("");
@@ -113,6 +117,7 @@ export default function App({ kind }) {
   // Live data for the previews
   const preview = usePreviewRows({
     connectionId: connection?.connectionId, sql, analysisKey: analysis.key, columns, onExpired: handleExpired,
+    all: kind === "charts", // charts sum up every row; tables preview the first few
   });
   const rows = preview.rows;
   const effCols = useMemo(() => effectiveColumns(columns, tpl), [columns, tpl]);
@@ -124,7 +129,7 @@ export default function App({ kind }) {
   const slicedRows = useMemo(() => applySlicers(filteredRows, activeSlicers, sliceValues, colsByKey), [filteredRows, activeSlicers, sliceValues, colsByKey]);
 
   useEffect(() => {
-    if (!slicersEdited.current && analysis.key && rows.length) setSlicersRaw(suggestSlicers(effectiveColumns(columns, tpl), rows));
+    if (flow.includes("details") && !slicersEdited.current && analysis.key && rows.length) setSlicersRaw(suggestSlicers(effectiveColumns(columns, tpl), rows));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analysis.key, rows]);
 
@@ -159,22 +164,29 @@ export default function App({ kind }) {
     slicersEdited.current = false;
     setSort(null);
     if (!title && res.table) setTitle(`${prettify(res.table)} Report`);
-    setReached(at("query"));
+    setReached(at(step)); // the steps after this one start again
+  }
+
+  const analysisKeyOf = (query) => `${connection.connectionId}\u0000${query}`;
+
+  /** Reads the query's columns from SQL Server (once per query); the rows then load for the preview. */
+  async function analyzeQuery(query) {
+    const key = analysisKeyOf(query);
+    if (key === analysis.key) return preview.refresh();
+    applyAnalysis(await api.analyze(connection.connectionId, query), key);
   }
 
   async function next() {
     setError("");
     if (step === "connect") {
       if (!connection) return setError("Connect to a database to continue.");
-      return go("query");
+      return go(flow[at(step) + 1]);
     }
     if (step === "query") {
-      const key = `${connection.connectionId}\u0000${sql}`;
-      if (key !== analysis.key) {
+      if (analysisKeyOf(sql) !== analysis.key) {
         setBusy(true);
         try {
-          const res = await api.analyze(connection.connectionId, sql);
-          applyAnalysis(res, key);
+          await analyzeQuery(sql);
         } catch (e) {
           if (e.status === 410) return handleExpired(e);
           return setError(e.message);
@@ -196,7 +208,7 @@ export default function App({ kind }) {
   const nextLabel = typeof S.next === "function" ? S.next(kind) : S.next;
   const blocked = step === "connect" && !connection; // Continue waits for the step's own action
   const stepNo = at(step);
-  const showPreviewBar = stepNo >= at("columns") && analysis.key;
+  const showPreviewBar = S.previewBar && analysis.key;
 
   return (
     <div className="rb">
@@ -226,6 +238,13 @@ export default function App({ kind }) {
           {step === "columns" && <ColumnsStep columns={columns} setColumns={setColumns} rows={rows} tpl={tpl} setTpl={setTpl} />}
 
 
+          {step === "chart" && (
+            <ChartsStep
+              connection={connection} sql={sql} setSql={setSql} chat={chartChat} setChat={setChartChat} onExpired={handleExpired}
+              onRun={analyzeQuery} ran={!!analysis.key} cols={effCols} rows={rows} preview={preview}
+            />
+          )}
+
           {step === "template" && (
             <TemplateStep tpl={tpl} setTpl={setTpl} effCols={effCols} previewProps={{ ...previewProps, rows: sortedAll }} />
           )}
@@ -243,7 +262,7 @@ export default function App({ kind }) {
 
           {step === "export" && (
             <ExportStep
-              title={title} setTitle={setTitle} onExpired={handleExpired} onConvert={convertToSsrs}
+              title={title} setTitle={setTitle} onExpired={handleExpired} onConvert={() => convertToSsrs("template")}
               payload={{
                 connectionId: connection?.connectionId, sql, tpl, sort,
                 columns: columns.map(({ key, name, type, selected, unnamed, dup }) => ({ key, name, type, selected, unnamed, dup })),
@@ -269,6 +288,8 @@ export default function App({ kind }) {
                 <button className={`btn${blocked ? "" : " btn-primary"}`} onClick={next} disabled={busy || blocked}>
                   {busy ? "Asking SQL Server…" : nextLabel}
                 </button>
+              ) : kind === "charts" ? (
+                analysis.key && <button className="btn" onClick={() => convertToSsrs("columns")} title="Same connection and query, as a formatted SSRS report">Turn into an SSRS report</button>
               ) : (
                 <button className="btn" onClick={() => go("query")}>Start a new query</button>
               )}

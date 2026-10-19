@@ -6,9 +6,9 @@ import TemplatesPage from "./TemplatesPage.jsx";
 import OptionsPage from "./OptionsPage.jsx";
 import "./styles.css";
 
-/** "#/build/ssrs" or "#/build/adhoc" -> the report kind; anything else is the landing page. */
+/** "#/build/ssrs", "#/build/adhoc" or "#/build/charts" -> the report kind; anything else is the landing page. */
 function kindOf(hash) {
-  const m = hash.match(/^#\/build(?:\/(ssrs|adhoc))?$/);
+  const m = hash.match(/^#\/build(?:\/(ssrs|adhoc|charts))?$/);
   return m ? m[1] || "ssrs" : null;
 }
 
@@ -28,17 +28,23 @@ function Root() {
   const [lastKind, setLastKind] = useState(kind || "ssrs"); // the builder keeps its kind while the landing page shows
   useEffect(() => { if (kind) setLastKind(kind); }, [kind]);
   useEffect(() => {
-    const onHash = () => { setKind(kindOf(location.hash)); setPage(pageOf(location.hash)); };
+    // Opening the builder (from any link or button) starts at the top of the page
+    const onHash = () => {
+      const k = kindOf(location.hash);
+      if (k) window.scrollTo(0, 0);
+      setKind(k);
+      setPage(pageOf(location.hash));
+    };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
   useEffect(() => { if (!building) document.title = TITLES[page] || "LoanMart Insights"; }, [building, page]);
-  const start = (k) => { location.hash = `#/build/${k}`; window.scrollTo(0, 0); };
+  const start = (k) => { location.hash = `#/build/${k}`; };
 
   return (
     <>
       {page === "templates" && <TemplatesPage />}
-      {page === "options" && <div className="rb lp-dark"><OptionsPage onStart={start} /></div>}
+      {page === "options" && <div className="rb lp-dark"><OptionsPage /></div>}
       {!building && !page && <div className="rb lp-dark"><Landing onStart={start} /></div>}
       <div hidden={!building}><App kind={kind || lastKind} /></div>
     </>

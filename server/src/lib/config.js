@@ -8,6 +8,11 @@ export const settings = {
   maxConnections: num(process.env.MAX_CONNECTIONS, 50),
   /** Rows returned for the on-screen preview. The exported report still returns every row. */
   previewRowLimit: num(process.env.PREVIEW_ROW_LIMIT, 200),
+  /**
+   * Charts sum up every row the query returns, so they aren't held to the preview's limit; this is only a safety
+   * ceiling so a detail query that returns millions of rows can't swamp the browser.
+   */
+  chartRowLimit: num(process.env.CHART_ROW_LIMIT, 100_000),
   queryTimeoutMs: num(process.env.QUERY_TIMEOUT_SECONDS, 60) * 1000,
   /** Ad hoc exports (CSV, Excel) run the whole query; they stop at this many rows (Excel's own limit is 1,048,575). */
   exportRowLimit: Math.min(num(process.env.EXPORT_ROW_LIMIT, 500_000), 1_048_575),

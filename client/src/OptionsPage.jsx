@@ -3,7 +3,7 @@ import Logo from "./components/Logo.jsx";
 import { Icon } from "./Landing.jsx";
 import "./landing.css";
 
-/** Everything the app offers. `go` is a report kind for the builder, or a page's hash. */
+/** Everything the app offers, each with the link into it. */
 const OPTIONS = [
   {
     icon: "file",
@@ -17,7 +17,7 @@ const OPTIONS = [
     ],
     needs: "A SQL Server connection and a SELECT query (or ask AI to write it).",
     action: "Create SSRS report",
-    go: "ssrs",
+    href: "#/build/ssrs",
   },
   {
     icon: "columns",
@@ -31,7 +31,21 @@ const OPTIONS = [
     ],
     needs: "A SQL Server connection and a SELECT query (or ask AI to write it).",
     action: "Create ad hoc export",
-    go: "adhoc",
+    href: "#/build/adhoc",
+  },
+  {
+    icon: "eye",
+    title: "See data in charts",
+    lead: "Ask a question in plain English and see the answer as charts, suggested from the rows that come back.",
+    gets: [
+      "AI writes a query that sums up your data (by month, by branch, top 10…)",
+      "Totals at a glance, plus trend, ranking and share charts that suit the result",
+      "Follow-ups like “split it by state” redraw the charts",
+      "Every chart can be read as a table, and turned into an SSRS report",
+    ],
+    needs: "A SQL Server connection. Only table and column names are sent to the AI, never your data.",
+    action: "See data in charts",
+    href: "#/build/charts",
   },
   {
     icon: "layers",
@@ -45,7 +59,7 @@ const OPTIONS = [
     ],
     needs: "Nothing: no database connection needed.",
     action: "Open the template designer",
-    go: "#/templates",
+    href: "#/templates",
   },
   {
     icon: "spark",
@@ -59,7 +73,7 @@ const OPTIONS = [
     ],
     needs: "Part of the Query step in both SSRS reports and ad hoc exports.",
     action: "Start a report with AI",
-    go: "ssrs",
+    href: "#/build/ssrs",
   },
 ];
 
@@ -73,9 +87,8 @@ const COMPARE = [
 ];
 
 /** "Explore" page (#/options): every way to use the app, with a way into each. */
-export default function OptionsPage({ onStart }) {
+export default function OptionsPage() {
   useEffect(() => { window.scrollTo(0, 0); }, []); // opened from partway down the home page
-  const start = (go) => (go.startsWith("#") ? (location.hash = go) : onStart(go));
 
   return (
     <>
@@ -92,7 +105,8 @@ export default function OptionsPage({ onStart }) {
         <section className="lp lp-section">
           <h1 className="lp-opt-title">What you can do</h1>
           <p className="lp-lead">
-            Build a report for your report server, download your data as a file, or design a template to reuse.
+            Build a report for your report server, download your data as a file, see it in charts, or design a
+            template to reuse.
             Pick where to start. You can come back here any time from the home page.
           </p>
 
@@ -106,7 +120,7 @@ export default function OptionsPage({ onStart }) {
                   {o.gets.map((g) => <li key={g}>{g}</li>)}
                 </ul>
                 <p className="lp-needs"><strong>You'll need:</strong> {o.needs}</p>
-                <button className="btn lp-cta" onClick={() => start(o.go)}>{o.action} <Icon name="arrow" size={15} /></button>
+                <a className="btn lp-cta" href={o.href}>{o.action} <Icon name="arrow" size={15} /></a>
               </li>
             ))}
           </ul>

@@ -108,6 +108,7 @@ Environment variables (all optional):
 | `CONNECTION_IDLE_MINUTES` | `30` | Close database connections unused for this long |
 | `MAX_CONNECTIONS` | `50` | Most open connections at once |
 | `PREVIEW_ROW_LIMIT` | `200` | Rows shown in the preview (the SSRS report returns every row) |
+| `CHART_ROW_LIMIT` | `100000` | Charts use every row the query returns; this is only a safety ceiling |
 | `QUERY_TIMEOUT_SECONDS` | `60` | Longest a preview query may run |
 | `CLIENT_ORIGIN` | any | Allowed CORS origin if the UI is hosted elsewhere |
 | `TEMPLATES_FILE` | `server/data/templates.json` | Where saved templates are stored |

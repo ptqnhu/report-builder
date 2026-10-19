@@ -753,9 +753,51 @@
   margin-top: clamp(40px, 5vw, 64px) /* same space under the corner label as in "How it works" */
 }
 
-/* One feature per cell */
+/* One feature per cell. The whole cell is a link into that part of the app, its action at the bottom. */
 .lp-can-item {
-  padding: 8px 0 24px
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0 24px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 4px
+}
+
+.lp-can-item:focus-visible {
+  outline: 2px solid var(--emerald);
+  outline-offset: 8px
+}
+
+.lp-can-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 24px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink)
+}
+
+.lp-can-go .lp-icon {
+  transition: transform .2s ease
+}
+
+.lp-can-item:hover h3,
+.lp-can-item:hover .lp-can-go {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px
+}
+
+.lp-can-item:hover .lp-can-go .lp-icon {
+  transform: translateX(4px)
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-can-go .lp-icon {
+    transition: none
+  }
 }
 
 .lp-can-art {
@@ -777,17 +819,6 @@
   line-height: 1.1;
   letter-spacing: -0.035em;
   color: var(--ink)
-}
-
-.lp-can-soon {
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--lime);
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0;
-  color: var(--lime-ink)
 }
 
 /* Bulleted list, one item per line, each after a small emerald dot */
@@ -823,7 +854,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr))
   }
 
-  .lp-can-item:nth-of-type(n+3) {
+  .lp-can-item:nth-child(n+3) {
     padding-top: 48px;
     border-top: 1px solid var(--ink)
   }
@@ -835,7 +866,7 @@
     grid-template-columns: minmax(0, 1fr)
   }
 
-  .lp-can-item:nth-of-type(n+2) {
+  .lp-can-item:nth-child(n+2) {
     padding-top: 48px;
     border-top: 1px solid var(--ink)
   }

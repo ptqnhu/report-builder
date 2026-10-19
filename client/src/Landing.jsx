@@ -44,30 +44,37 @@ const FEATURES = [
 ];
 
 /**
- * "What you can do" section: the four things the app does. `art` picks the line drawing in <CanArt>, `soon` marks a
- * feature that is not in the app yet.
+ * "What you can do" section: the four things the app does, each a link into it. `art` picks the line drawing in
+ * <CanArt>, `href` is where it goes and `action` the link's wording.
  */
 const CAN_DO = [
   {
     art: "ssrs",
     title: "Create an SSRS report",
     items: ["Your own SELECT or AI-written", "Columns, types and totals", "Filters and sort", "Ready-to-upload .rdl file", "SSRS and Power BI Report Server"],
+    href: "#/build/ssrs",
+    action: "Create a report",
   },
   {
     art: "adhoc",
     title: "Create an ad hoc export",
     items: ["Excel, PDF or CSV", "Every row, up to 500,000", "Built-in styles", "Optional totals row", "Turn it into an SSRS report later"],
+    href: "#/build/adhoc",
+    action: "Create an export",
   },
   {
     art: "template",
     title: "Build a template",
     items: ["Style, row height and layout", "Header and footer", "Currency, decimals and dates", "Designed on sample data", "Reused on every report"],
+    href: "#/templates",
+    action: "Open the designer",
   },
   {
     art: "chart",
     title: "See data in charts",
-    items: ["Bar, line and pie charts", "Built from your query's rows", "Totals at a glance"],
-    soon: true,
+    items: ["Ask AI in plain English", "Charts suggested from the rows", "Trends, rankings and shares", "Totals at a glance"],
+    href: "#/build/charts",
+    action: "See your data",
   },
 ];
 
@@ -112,20 +119,21 @@ function CanArt({ name }) {
   );
 }
 
-/** "What you can do": a corner label, then the four features in a 2 × 2 grid. */
+/** "What you can do": a corner label, then the four features in a row, each opening its part of the app. */
 function CanDo() {
   return (
     <section id="what" className="lp lp-can">
       <p className="lp-can-eyebrow" data-line>What LoanMart Insights can do</p>
       <div className="lp-can-grid">
         {CAN_DO.map((f) => (
-          <article key={f.title} className="lp-can-item">
+          <a key={f.title} className="lp-can-item" href={f.href}>
             <CanArt name={f.art} />
-            <h3>{f.title}{f.soon && <span className="lp-can-soon">Coming soon</span>}</h3>
+            <h3>{f.title}</h3>
             <ul className="lp-can-list">
               {f.items.map((i) => <li key={i}>{i}</li>)}
             </ul>
-          </article>
+            <span className="lp-can-go">{f.action} <Icon name="arrow" size={15} /></span>
+          </a>
         ))}
       </div>
     </section>
@@ -260,7 +268,7 @@ function Diagram() {
   );
 }
 
-/** "Get started" in the top bar: opens a small menu with the two ways into the builder. */
+/** "Get started" in the top bar: opens a small menu with the ways into the builder. */
 function StartMenu({ onStart }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -292,6 +300,10 @@ function StartMenu({ onStart }) {
           <button role="menuitem" onClick={() => onStart("adhoc")}>
             <Icon name="columns" size={18} />
             <span><strong>Ad hoc export</strong><small>Every row as CSV, Excel or PDF</small></span>
+          </button>
+          <button role="menuitem" onClick={() => onStart("charts")}>
+            <Icon name="spark" size={18} />
+            <span><strong>Charts</strong><small>Ask AI and see your data as charts</small></span>
           </button>
           <a role="menuitem" href="#/templates">
             <Icon name="layers" size={18} />
@@ -372,11 +384,12 @@ export default function Landing({ onStart }) {
     lenis.current.scrollTo(target, { offset: -parseFloat(getComputedStyle(target).scrollMarginTop || 0) });
   };
 
-  /** The two ways into the builder: a formatted SSRS report, or a plain CSV / Excel export of the rows. */
+  /** The ways into the builder: a formatted SSRS report, a plain CSV / Excel export of the rows, or charts. */
   const getStarted = () => (
     <div className="lp-start">
       <button className="btn btn-primary lp-cta" onClick={() => onStart("ssrs")}>Create SSRS report <Icon name="arrow" size={15} /></button>
       <button className="btn lp-cta" onClick={() => onStart("adhoc")}>Create ad hoc export <Icon name="arrow" size={15} /></button>
+      <button className="btn lp-cta" onClick={() => onStart("charts")}>See data in charts <Icon name="arrow" size={15} /></button>
     </div>
   );
 
@@ -446,7 +459,7 @@ export default function Landing({ onStart }) {
         <div className="lp-card lp-end-card hero">
           <div>
             <h2>Ready when you are</h2>
-            <p>SSRS reports for 2008 R2 and later, including Power BI Report Server, plus Excel, PDF and CSV files.</p>
+            <p>SSRS reports for 2008 R2 and later, including Power BI Report Server, Excel, PDF and CSV files, and charts.</p>
           </div>
           {getStarted()}
         </div>

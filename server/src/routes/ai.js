@@ -6,6 +6,15 @@ import { loadSchema } from "../services/ai/schema.js";
 import { writeQuery } from "../services/ai/queryWriter.js";
 import { noActivityLog } from "../services/activityLog.js";
 
+/**
+ * Added to the user's latest message when the answer will be charted (the "See data in charts" flow), so the query
+ * returns a few summarised rows rather than every detail row. Kept out of the system prompt, which is cached.
+ */
+const CHART_NOTE = `The result will be shown as charts, not a table. Return a summarised result that charts well:
+- One label column (a category, or a date or month for trends over time) and one to three numeric measures, with GROUP BY.
+- At most about 50 rows. Use TOP with ORDER BY on the main measure (descending) for rankings, or ORDER BY the date for trends.
+- For trends, group dates by month or day as a date column (e.g. DATEFROMPARTS(YEAR(d), MONTH(d), 1) AS [Month]).`;
+
 /** Checks the conversation: alternating turns, starting and ending with the user. */
 function readMessages(list) {
   if (!Array.isArray(list) || !list.length) throw new HttpError(400, "Describe the report you need.");
@@ -23,8 +32,9 @@ export default function aiRoutes(connections, activityLog = noActivityLog) {
   const router = Router();
 
   /**
-   * POST /api/ai/query { connectionId, messages: [{role: "user", content} | {role: "assistant", sql, explanation}], sql? }
+   * POST /api/ai/query { connectionId, messages: [{role: "user", content} | {role: "assistant", sql, explanation}], sql?, purpose? }
    * -> { sql, explanation }. `sql` is what's in the editor now, so "add a filter for…" works on it.
+   * `purpose: "charts"` asks for a summarised query that charts well.
    */
   router.post("/ai/query", asyncHandler(async (req, res) => {
     const connectionId = requireString(req.body?.connectionId, "connectionId", { max: 64, allowEmpty: false });
@@ -34,6 +44,7 @@ export default function aiRoutes(connections, activityLog = noActivityLog) {
     const request = messages.at(-1).content;
     const current = optionalString(req.body?.sql, "sql", 200_000).trim();
     if (current) messages.at(-1).content += `\n\nThe query in the editor right now:\n\`\`\`sql\n${current}\n\`\`\``;
+    if (req.body?.purpose === "charts") messages.at(-1).content += `\n\n${CHART_NOTE}`;
 
     const started = Date.now();
     const entry = {
