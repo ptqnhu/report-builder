@@ -17,7 +17,7 @@ import { sortRows } from "./utils/table.js";
 
 const EMPTY_ANALYSIS = { columns: [], table: null, key: null };
 
-/** The builder. `kind` ("adhoc", "ssrs" or "charts") is picked on the landing page and decides the steps. */
+/** The builder. `kind` ("adhoc", "ssrs" or "charts") is picked from a link (the dashboards' top bar or the tools page) and decides the steps. */
 export default function App({ kind }) {
   // Navigation. `step` is a step id; `reached` is how far along the flow the user has got (an index into it).
   const flow = FLOWS[kind];

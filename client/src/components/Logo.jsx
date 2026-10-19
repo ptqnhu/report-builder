@@ -1,9 +1,9 @@
 import { useId } from "react";
 
-/** App mark: two emerald data dots feeding two ink green report lines. Shared by the landing page and the builder's top bar.
+/** App mark: two emerald data dots feeding two ink green report lines. Shared by every page's top bar.
  * The colours come from --logo-* in styles.css. */
 export default function Logo({ size = 28 }) {
-  // Unique per logo, since the landing page and the (hidden) builder can both be on the page. Colons break url(#...).
+  // Unique per logo, since several pages (some hidden) can be on the page at once. Colons break url(#...).
   const g = `rb-logo${useId().replace(/:/g, "")}`;
   return (
     <svg className="rb-logo" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">

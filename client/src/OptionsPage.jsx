@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import Logo from "./components/Logo.jsx";
-import { Icon } from "./Landing.jsx";
+import { Icon } from "./components/Icon.jsx";
 import "./landing.css";
 
 /** Everything the app offers, each with the link into it. */
@@ -88,7 +88,7 @@ const COMPARE = [
 
 /** "Explore" page (#/options): every way to use the app, with a way into each. */
 export default function OptionsPage() {
-  useEffect(() => { window.scrollTo(0, 0); }, []); // opened from partway down the home page
+  useEffect(() => { window.scrollTo(0, 0); }, []); // opened from partway down another page
 
   return (
     <>
@@ -97,7 +97,7 @@ export default function OptionsPage() {
           <div className="lp lp-top">
             <p className="lp-brand"><a href="#" title="Back to the home page"><Logo size={30} />LoanMart Insights</a></p>
             <div className="rail-end">
-              <a className="btn btn-sm" href="#"><Icon name="back" size={14} /> Home</a>
+              <a className="btn btn-sm" href="#"><Icon name="back" size={14} /> Dashboards</a>
             </div>
           </div>
         </header>
@@ -107,7 +107,7 @@ export default function OptionsPage() {
           <p className="lp-lead">
             Build a report for your report server, download your data as a file, see it in charts, or design a
             template to reuse.
-            Pick where to start. You can come back here any time from the home page.
+            Pick where to start. You can come back here any time from All tools in the top bar of the dashboards.
           </p>
 
           <ul className="lp-options">

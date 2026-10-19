@@ -13,7 +13,7 @@ export const STEPS = {
   export: { title: "Export", heading: "Download your data", help: "Name the file and pick a format. The download runs the whole query, so it has every row, not just the preview. Click a column heading to sort the file.", previewBar: true, next: null },
 };
 
-/** Steps every report kind shares. The kind is chosen on the landing page. Charts ask AI in their own step. */
+/** Steps every report kind shares. The kind is chosen from a link into the builder. Charts ask AI in their own step. */
 const COMMON = ["connect", "query", "columns"];
 export const FLOWS = {
   adhoc: [...COMMON, "export"],

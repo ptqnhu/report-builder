@@ -3,7 +3,7 @@
 /* Design tokens, "modern luxury" (see the design brief): cool off-white page, white cards that float on it with
    hardly any border, ink green type and emphasis, emerald for links and active states, pale mint only for AI.
    Emerald is the logo's own green (BRAND.green in shared/brand.js); ink green is the same hue, nearly black.
-   Shared by the landing page and the builder. The exported reports and the report preview keep their own colours
+   Shared by every page. The exported reports and the report preview keep their own colours
    (.doc below). */
 .rb {
   /* Core palette */
@@ -2758,4 +2758,95 @@ html {
   .ch-grid {
     grid-template-columns: minmax(0, 1fr)
   }
+}
+
+/* Department dashboards: the heading with the department drop-down at its right */
+.page-head.dash-head {
+  max-width: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 32px;
+  flex-wrap: wrap
+}
+
+.page-head.dash-head > div:first-child {
+  max-width: 72ch
+}
+
+.dash-pick .sel {
+  min-width: 200px
+}
+
+.dash-grid {
+  margin-top: 16px
+}
+
+/* A tile's change on the period before: arrow and word carry the direction, the colour only backs them up */
+.ch-change {
+  font-weight: 600
+}
+
+.ch-change.up {
+  color: var(--pos)
+}
+
+.ch-change.down {
+  color: var(--neg)
+}
+
+/* A chart or tile row still loading, or whose query failed */
+.ch-card.dash-wait {
+  min-height: 140px
+}
+
+.ch-card.dash-wait-tiles {
+  min-height: 0;
+  padding: 16px 20px
+}
+
+/* Links to the report tools in the dashboards' top bar; on narrow screens only "All tools" stays */
+.rail-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap
+}
+
+@media (max-width: 860px) {
+  .rail-links a:not(:last-child) {
+    display: none
+  }
+}
+
+/* The dashboards' date slicer: one row above everything it scopes, the period on show at its end */
+.dash-slicer {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 14px
+}
+
+.dash-slicer .sel {
+  min-width: 180px
+}
+
+.dash-slicer-note {
+  padding-bottom: 10px;
+  font-size: 14px;
+  color: var(--ink2)
+}
+
+.dash-slicer-note strong {
+  color: var(--ink)
+}
+
+/* While a new period loads, the charts keep their last render, faded, rather than jumping to placeholders */
+.ch-results {
+  transition: opacity .2s
+}
+
+.ch-results.dash-stale {
+  opacity: .55
 }

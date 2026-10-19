@@ -63,6 +63,7 @@ report-builder/
         ├── App.jsx         Step navigation and report state
         ├── api.js          All calls to the server
         ├── steps/          One component per step
+        ├── dashboards/     Dashboards: the business overview (the home page) and one per department, a file of queries each
         ├── components/     Reusable UI (report table, export panel, …)
         ├── hooks/          usePreviewRows, useTemplates, useRdlExport
         └── utils/          Sorting, totals, downloads
@@ -78,6 +79,7 @@ report-builder/
 | What the .rdl file contains | `server/src/rdl/` |
 | Number or date formatting (preview) | `shared/values.js` (and `server/src/rdl/styles.js` for SSRS) |
 | Filter behaviour | `shared/filters.js` (preview) and `server/src/rdl/filters.js` (SSRS) |
+| The home page (business overview) or a department dashboard, or adding a department | `client/src/dashboards/` (see `departments.js`) |
 | Screens and wording | `client/src/steps/`, `client/src/components/` |
 | Look and feel | `client/src/styles.css` |
 

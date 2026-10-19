@@ -46,7 +46,10 @@ function useWidth() {
   return [ref, width];
 }
 
-/** Headline numbers: one tile per measure. */
+/**
+ * Headline numbers: one tile per measure. A tile's `change` (a fraction, e.g. 0.124) shows as an arrow and a
+ * percentage, then `vs` saying what it's compared with.
+ */
 export function StatTiles({ tiles }) {
   return (
     <div className="ch-tiles">
@@ -54,6 +57,14 @@ export function StatTiles({ tiles }) {
         <div key={t.col.key} className="ch-card ch-tile" title={full(t.value, t.col)}>
           <p className="ch-tile-label">{t.label}</p>
           <p className="ch-tile-value">{compact(t.value, t.col)}</p>
+          {typeof t.change === "number" && (
+            <p className="ch-tile-note">
+              <span className={`ch-change ${t.change < 0 ? "down" : "up"}`}>
+                <span aria-hidden="true">{t.change < 0 ? "▼" : "▲"}</span> {t.change < 0 ? "Down" : "Up"} {pct(Math.abs(t.change))}
+              </span>{" "}
+              {t.vs}
+            </p>
+          )}
           {t.note && <p className="ch-tile-note">{t.note}</p>}
         </div>
       ))}
@@ -175,7 +186,8 @@ function LineChart({ chart }) {
     const paths = chart.series.map((s) => s.values.reduce((d, v, i) => (v === null ? d : `${d}${d && s.values[i - 1] !== null ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`), ""));
     // As many x labels as fit (about 90px each), always the first and last
     const every = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(iw / 90))));
-    const xTicks = chart.x.values.map((_, i) => i).filter((i) => i % every === 0 && (n - 1 - i >= every / 2 || i === n - 1));
+    // A tick less than a full step before the last is dropped, or the two labels would overlap
+    const xTicks = chart.x.values.map((_, i) => i).filter((i) => i % every === 0 && (n - 1 - i >= every || i === n - 1));
     if (xTicks.at(-1) !== n - 1) xTicks.push(n - 1);
     const ends = chart.series.map((s) => s.values.findLastIndex((v) => v !== null)); // each line's last point
     return { ticks, w, iw, ih, x, y, paths, xTicks, ends };

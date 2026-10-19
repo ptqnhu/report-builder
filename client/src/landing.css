@@ -1,4 +1,5 @@
-/* Landing page. Only the landing page uses these styles; the builder's look is in styles.css.
+/* The "What you can do" page (#/options), styled as the old landing page was. Many rules below are left from that
+   page and no longer used. Only this page uses these styles; the builder's look is in styles.css.
    Colours and fonts come from the .rb block at the top of styles.css, shared with the builder. */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
